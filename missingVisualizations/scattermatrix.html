@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>
+      Scandinavia Mortality Scatter with Trails & Slider
+    </title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+      body {
+        font-family: Arial;
+        margin: 20px;
+      }
+      h1 {
+        text-align: center;
+      }
+      /* HTML legend under the title */
+      .legend-html {
+        text-align: center;
+        margin-bottom: 10px;
+      }
+      .legend-item {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 12px;
+        font-size: 14px;
+      }
+      .legend-color {
+        width: 12px;
+        height: 12px;
+        margin-right: 6px;
+        border: 1px solid #333;
+      }
+      #chart {
+        margin: 0 auto;
+        max-width: 900px;
+      }
+      .axis path,
+      .axis line {
+        stroke: #888;
+      }
+      .grid line {
+        stroke: #aaa;
+        stroke-width: 1.2px;
+      }
+      .grid path {
+        stroke: none;
+      }
+      .trail {
+        fill: none;
+        stroke-width: 1.5px;
+        opacity: 0.7;
+      }
+      .dot {
+        stroke: #333;
+        stroke-width: 1px;
+      }
+      #slider-container {
+        text-align: center;
+        margin-top: 10px;
+      }
+      #slider-container input {
+        width: 80%;
+      }
+      #current-date {
+        font-weight: bold;
+        margin-left: 10px;
+      }
+      button {
+        display: block;
+        margin: 10px auto;
+        padding: 8px 16px;
+        font-size: 14px;
+      }
+
+      /* Tooltip styling */
+      .tooltip {
+        position: absolute;
+        pointer-events: none;
+        background: white;
+        border: 1px solid #999;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        opacity: 0;
+        transition: opacity 0.1s ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scandinavia COVID-19 Deaths Per 10 Million</h1>
+
+    <!-- Horizontal legend under the title -->
+    <div class="legend-html" id="legend">
+      <div class="legend-item">
+        <div
+          class="legend-color"
+          style="background: darkred"
+        ></div>
+        <div>Denmark</div>
+      </div>
+      <div class="legend-item">
+        <div
+          class="legend-color"
+          style="background: steelblue"
+        ></div>
+        <div>Norway</div>
+      </div>
+      <div class="legend-item">
+        <div
+          class="legend-color"
+          style="background: YellowGreen"
+        ></div>
+        <div>Sweden</div>
+      </div>
+    </div>
+
+    <div id="chart"></div>
+    <button id="play">Play</button>
+    <div id="slider-container">
+      <input
+        type="range"
+        id="date-slider"
+        min="0"
+        max="0"
+        step="1"
+      />
+      <span id="current-date"></span>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+      const margin = {
+          top: 20,
+          right: 30,
+          bottom: 40,
+          left: 60,
+        },
+        width = 900 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+
+      const parseDate = d3.timeParse('%Y-%m-%d'),
+        formatDate = d3.timeFormat('%Y-%m-%d');
+
+      const svg = d3
+        .select('#chart')
+        .append('svg')
+        .attr('width', width + margin.left + margin.right)
+        .attr('height', height + margin.top + margin.bottom)
+        .append('g')
+        .attr(
+          'transform',
+          `translate(${margin.left},${margin.top})`,
+        );
+
+      const tooltip = d3.select('#tooltip');
+
+      d3.csv(
+        'https://gist.githubusercontent.com/karldif01/e0beb4b117aa3dc68c55510e05f41a64/raw/89705d1aca641526463cae1ddc4aca49987b5a86/gistfile1.txt',
+        (d) => ({
+          Country: d.Country,
+          date: parseDate(d.date),
+          total_deaths: +d.deaths_per_10m,
+        }),
+      ).then((data) => {
+        data.sort((a, b) => d3.ascending(a.date, b.date));
+
+        const dataByCountry = d3.group(
+            data,
+            (d) => d.Country,
+          ),
+          countries = Array.from(dataByCountry.keys()),
+          dates = Array.from(
+            new Set(data.map((d) => +d.date)),
+          )
+            .sort()
+            .map((t) => new Date(t));
+
+        // scales
+        const x = d3
+          .scaleTime()
+          .domain(d3.extent(dates))
+          .range([0, width]);
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(data, (d) => d.total_deaths)])
+          .nice()
+          .range([height, 0]);
+        const rScale = d3
+          .scaleSqrt()
+          .domain([0, d3.max(data, (d) => d.total_deaths)])
+          .range([2, 12]);
+
+        // grid & axes
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .call(
+            d3.axisLeft(y).tickSize(-width).tickFormat(''),
+          )
+          .lower();
+
+        svg
+          .append('g')
+          .attr('class', 'axis')
+          .attr('transform', `translate(0,${height})`)
+          .call(d3.axisBottom(x));
+
+        svg
+          .append('g')
+          .attr('class', 'axis')
+          .call(d3.axisLeft(y));
+
+        svg
+          .append('text')
+          .attr('x', width / 2)
+          .attr('y', height + margin.bottom - 5)
+          .attr('text-anchor', 'middle')
+          .text('Date');
+
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('x', -height / 2)
+          .attr('y', -margin.left + 15)
+          .attr('text-anchor', 'middle')
+          .text('Deaths Per 10 Million');
+
+        const color = {
+          Sweden: 'YellowGreen',
+          Norway: 'steelblue',
+          Denmark: 'darkred',
+        };
+        const lineGen = d3
+          .line()
+          .x((d) => d[0])
+          .y((d) => d[1]);
+
+        // to backtrack history of points
+        const history = new Map();
+        countries.forEach((c) => history.set(c, []));
+
+        const trails = svg
+          .selectAll('.trail')
+          .data(countries)
+          .enter()
+          .append('path')
+          .attr('class', 'trail')
+          .attr('stroke', (d) => color[d]);
+
+        const dots = svg
+          .selectAll('.dot')
+          .data(countries)
+          .enter()
+          .append('circle')
+          .attr('class', 'dot')
+          .attr('fill', (d) => color[d])
+          .on('mouseover', (event, country) => {
+            // get current record for this country at current idx
+            const rec = dataByCountry.get(country)[idx];
+            tooltip.style('opacity', 1).html(
+              `<strong>${country}</strong><br/>
+                                 ${formatDate(rec.date)}<br/>
+                                 Deaths per 10M: ${rec.total_deaths}`,
+            );
+          })
+          .on('mousemove', (event) => {
+            tooltip
+              .style('left', event.pageX + 10 + 'px')
+              .style('top', event.pageY + 10 + 'px');
+          })
+          .on('mouseout', () => {
+            tooltip.style('opacity', 0);
+          });
+
+        // slider
+        const slider = d3
+          .select('#date-slider')
+          .attr('max', dates.length - 1)
+          .property('value', 0)
+          .on('input', function () {
+            idx = +this.value;
+            updateChart();
+          });
+        const dateLabel = d3.select('#current-date');
+
+        // animation logic
+        //idx tracks which date is currently displayed
+        let idx = 0,
+          timer;
+        d3.select('#play').on('click', () => {
+          if (timer) {
+            clearInterval(timer);
+            timer = null;
+            d3.select('#play').text('Play');
+          } else {
+            d3.select('#play').text('Pause');
+            timer = setInterval(() => {
+              idx = Math.min(idx + 1, dates.length - 1);
+              slider.property('value', idx);
+              updateChart();
+              if (idx === dates.length - 1) {
+                clearInterval(timer);
+                timer = null;
+                d3.select('#play').text('Play');
+              }
+            }, 10);
+          }
+        });
+
+        // update function
+        function updateChart() {
+          countries.forEach((country) => {
+            const recs = dataByCountry
+              .get(country)
+              .slice(0, idx + 1);
+            const hist = recs.map((r) => [
+              x(r.date),
+              y(r.total_deaths),
+            ]);
+            history.set(country, hist);
+          });
+          trails.attr('d', (d) => lineGen(history.get(d)));
+          dots
+            .attr('cx', (d) =>
+              x(dataByCountry.get(d)[idx].date),
+            )
+            .attr('cy', (d) =>
+              y(dataByCountry.get(d)[idx].total_deaths),
+            )
+            .attr('r', (d) =>
+              rScale(
+                dataByCountry.get(d)[idx].total_deaths,
+              ),
+            );
+          dateLabel.text(formatDate(dates[idx]));
+        }
+
+        updateChart();
+      });
+    </script>
+  </body>
+</html>

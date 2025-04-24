@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Scandinavian Countries Hospital Occupancy</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+
+      .dashboard {
+        display: flex;
+        flex-direction: row;
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .chart-container {
+        flex: 1;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 15px;
+        background-color: #f9f9f9;
+      }
+
+      .tooltip {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.95);
+        border: 1px solid #666;
+        border-radius: 4px;
+        padding: 10px;
+        font-size: 12px;
+        pointer-events: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+      }
+
+      .tooltip-value {
+        font-weight: bold;
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+
+      h2 {
+        margin-top: 0;
+        text-align: center;
+        color: #555;
+        font-size: 16px;
+      }
+
+      .axis-x path,
+      .axis-y path {
+        fill: none;
+        stroke: black;
+        shape-rendering: crispEdges;
+      }
+
+      .axis text {
+        font-size: 10px;
+      }
+
+      .line {
+        fill: none;
+        stroke-width: 2px;
+      }
+
+      .denmark-line {
+        stroke: #8b0000;
+      }
+
+      .sweden-line {
+        stroke: #9acd32;
+      }
+
+      .norway-line {
+        stroke: #0065a4;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 0 15px;
+      }
+
+      .legend-color {
+        width: 20px;
+        height: 3px;
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>
+      Scandinavian Countries Hospital Occupancy (2020-2022)
+    </h1>
+    <div class="dashboard">
+      <div class="chart-container">
+        <h2>Denmark Hospital Occupancy</h2>
+        <div id="denmark-chart"></div>
+      </div>
+      <div class="chart-container">
+        <h2>Norway Hospital Occupancy</h2>
+        <div id="norway-chart"></div>
+      </div>
+      <div class="chart-container">
+        <h2>Sweden Hospital Occupancy</h2>
+        <div id="sweden-chart"></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 30px">
+      <div
+        class="chart-container"
+        style="max-width: 1160px; margin: 0 auto"
+      >
+        <h2>Combined Hospital Occupancy</h2>
+        <div id="combined-chart"></div>
+        <div
+          class="legend"
+          id="combined-legend"
+          style="
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+          "
+        ></div>
+      </div>
+    </div>
+
+    <script>
+      //  dimensions
+      const margin = {
+        top: 20,
+        right: 20,
+        bottom: 40,
+        left: 50,
+      };
+      const width = 350 - margin.left - margin.right;
+      const height = 300 - margin.top - margin.bottom;
+
+      // Color scale
+      const colorScale = {
+        Sweden: '#9acd32',
+        Norway: '#0065A4',
+        Denmark: '#8b0000',
+      };
+
+      // tooltip
+      const tooltip = d3
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('opacity', 0);
+
+      // data
+      function loadData() {
+        d3.csv(
+          'https://gist.githubusercontent.com/karldif01/b47551c67889816e4caa36500377e080/raw/9c9dc3dc1223cf788e663dc5186c8ff279594f6b/gistfile1.txt',
+        ).then((csvData) => {
+          // Group by country
+          const dataByCountry = {
+            Denmark: [],
+            Norway: [],
+            Sweden: [],
+          };
+
+          csvData.forEach((d) => {
+            if (
+              d.indicator === 'Daily hospital occupancy' &&
+              dataByCountry.hasOwnProperty(d.Country)
+            ) {
+              dataByCountry[d.Country].push({
+                date: new Date(d.date),
+                value: +d.value,
+                formattedDate: d.date,
+              });
+            }
+          });
+
+          // Sort by date for each country
+          Object.keys(dataByCountry).forEach((country) => {
+            dataByCountry[country].sort(
+              (a, b) => a.date - b.date,
+            );
+          });
+
+          // charts
+          createChart(
+            'denmark-chart',
+            dataByCountry['Denmark'],
+            'Denmark',
+          );
+          createChart(
+            'norway-chart',
+            dataByCountry['Norway'],
+            'Norway',
+          );
+          createChart(
+            'sweden-chart',
+            dataByCountry['Sweden'],
+            'Sweden',
+          );
+
+          // combined chart
+          createCombinedChart(dataByCountry);
+        });
+      }
+
+      // line chart
+      function createChart(elementId, data, country) {
+        const svg = d3
+          .select(`#${elementId}`)
+          .append('svg')
+          .attr('width', width + margin.left + margin.right)
+          .attr(
+            'height',
+            height + margin.top + margin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${margin.left},${margin.top})`,
+          );
+
+        //  scales
+        const x = d3
+          .scaleTime()
+          .domain(d3.extent(data, (d) => d.date))
+          .range([0, width]);
+
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(data, (d) => d.value)])
+          .nice()
+          .range([height, 0]);
+
+        svg
+          .append('g')
+          .attr('class', 'axis-x')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .tickValues([
+                // Removed 2020 tick
+                new Date('2021-01-01'),
+                new Date('2022-01-01'),
+              ])
+              .tickFormat(d3.timeFormat('%Y')),
+          );
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('y', -40)
+          .attr('x', -height / 2)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '12px')
+          .text('Hospital Occupancy');
+
+        svg
+          .append('path')
+          .datum(data)
+          .attr(
+            'class',
+            `line ${country.toLowerCase()}-line`,
+          )
+          .attr(
+            'd',
+            d3
+              .line()
+              .x((d) => x(d.date))
+              .y((d) => y(d.value))
+              .curve(d3.curveMonotoneX),
+          );
+
+        // tooltip area
+        const tooltipArea = svg
+          .append('rect')
+          .attr('width', width)
+          .attr('height', height)
+          .style('opacity', 0)
+          .style('pointer-events', 'all');
+
+        const bisect = d3.bisector((d) => d.date).left;
+
+        tooltipArea.on('mousemove', function (event) {
+          const mouseX = d3.pointer(event)[0];
+
+          const x0 = x.invert(mouseX);
+
+          const i = bisect(data, x0, 1);
+
+          // Handle edge cases
+          if (i >= data.length || i <= 0) return;
+
+          // Get the data point
+          const d0 = data[i - 1];
+          const d1 = data[i];
+
+          // which point is closer
+          const d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+
+          // Show tooltip at position
+          tooltip
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+
+          tooltip
+            .html(
+              `
+            <strong>${country}</strong><br>
+            Date: ${d.formattedDate}<br>
+            Hospital Occupancy: <span class="tooltip-value">${d.value}</span>
+          `,
+            )
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 28 + 'px');
+
+          // vertical line at position
+          svg.selectAll('.tooltip-line').remove();
+          svg
+            .append('line')
+            .attr('class', 'tooltip-line')
+            .attr('x1', x(d.date))
+            .attr('x2', x(d.date))
+            .attr('y1', 0)
+            .attr('y2', height)
+            .style('stroke', 'rgba(0,0,0,0.2)')
+            .style('stroke-width', 1)
+            .style('stroke-dasharray', '3,3');
+
+          // circle at that position
+          svg.selectAll('.tooltip-circle').remove();
+          svg
+            .append('circle')
+            .attr('class', 'tooltip-circle')
+            .attr('cx', x(d.date))
+            .attr('cy', y(d.value))
+            .attr('r', 4)
+            .style('fill', colorScale[country])
+            .style('stroke', '#fff')
+            .style('stroke-width', 2);
+        });
+
+        tooltipArea.on('mouseout', function () {
+          tooltip
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+
+          svg.selectAll('.tooltip-line').remove();
+          svg.selectAll('.tooltip-circle').remove();
+        });
+      }
+
+      loadData();
+
+      // legend for combined chart
+      function createLegend(countries) {
+        const legendContainer = d3.select(
+          '#combined-legend',
+        );
+
+        countries.forEach((country) => {
+          const legendItem = legendContainer
+            .append('div')
+            .attr('class', 'legend-item');
+
+          legendItem
+            .append('div')
+            .attr('class', 'legend-color')
+            .style('background-color', colorScale[country]);
+
+          legendItem.append('span').text(country);
+        });
+      }
+
+      // combined chart
+      function createCombinedChart(allData) {
+        // fill width
+        const combinedMargin = {
+          top: 20,
+          right: 30,
+          bottom: 40,
+          left: 50,
+        };
+        const combinedWidth =
+          1100 - combinedMargin.left - combinedMargin.right;
+        const combinedHeight =
+          400 - combinedMargin.top - combinedMargin.bottom;
+
+        const svg = d3
+          .select('#combined-chart')
+          .append('svg')
+          .attr(
+            'width',
+            combinedWidth +
+              combinedMargin.left +
+              combinedMargin.right,
+          )
+          .attr(
+            'height',
+            combinedHeight +
+              combinedMargin.top +
+              combinedMargin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${combinedMargin.left},${combinedMargin.top})`,
+          );
+
+        const allPoints = [];
+        Object.keys(allData).forEach((country) => {
+          allData[country].forEach((d) =>
+            allPoints.push({ ...d, country: country }),
+          );
+        });
+
+        // scales
+        const x = d3
+          .scaleTime()
+          .domain(d3.extent(allPoints, (d) => d.date))
+          .range([0, combinedWidth]);
+
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(allPoints, (d) => d.value)])
+          .nice()
+          .range([combinedHeight, 0]);
+
+        // x axis
+        svg
+          .append('g')
+          .attr('class', 'axis-x')
+          .attr(
+            'transform',
+            `translate(0,${combinedHeight})`,
+          )
+          .call(
+            d3
+              .axisBottom(x)
+              .tickValues([
+                // Keep all ticks for combined chart
+                new Date('2020-01-01'),
+                new Date('2021-01-01'),
+                new Date('2022-01-01'),
+              ])
+              .tickFormat(d3.timeFormat('%Y')),
+          );
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('y', -40)
+          .attr('x', -combinedHeight / 2)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '12px')
+          .text('Hospital Occupancy');
+
+        const line = d3
+          .line()
+          .x((d) => x(d.date))
+          .y((d) => y(d.value))
+          .curve(d3.curveMonotoneX);
+
+        // lines for each country
+        Object.keys(allData).forEach((country) => {
+          svg
+            .append('path')
+            .datum(allData[country])
+            .attr(
+              'class',
+              `line ${country.toLowerCase()}-line`,
+            )
+            .attr('d', line);
+        });
+
+        createLegend(Object.keys(allData));
+
+        // tooltip area for combined chart
+        const tooltipArea = svg
+          .append('rect')
+          .attr('width', combinedWidth)
+          .attr('height', combinedHeight)
+          .style('opacity', 0)
+          .style('pointer-events', 'all');
+
+        tooltipArea.on('mousemove', function (event) {
+          const mouseX = d3.pointer(event)[0];
+
+          const x0 = x.invert(mouseX);
+
+          let closestPoints = [];
+          Object.keys(allData).forEach((country) => {
+            const bisect = d3.bisector((d) => d.date).left;
+            const i = bisect(allData[country], x0, 1);
+
+            // edge cases
+            if (i >= allData[country].length || i <= 0)
+              return;
+
+            const d0 = allData[country][i - 1];
+            const d1 = allData[country][i];
+
+            // find which point is closer
+            const d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+            closestPoints.push({ ...d, country: country });
+          });
+
+          if (closestPoints.length === 0) return;
+
+          svg.selectAll('.tooltip-line').remove();
+          svg.selectAll('.tooltip-circle').remove();
+
+          // vertical line
+          const tooltipDate = closestPoints[0].date;
+          svg
+            .append('line')
+            .attr('class', 'tooltip-line')
+            .attr('x1', x(tooltipDate))
+            .attr('x2', x(tooltipDate))
+            .attr('y1', 0)
+            .attr('y2', combinedHeight)
+            .style('stroke', 'rgba(0,0,0,0.2)')
+            .style('stroke-width', 1)
+            .style('stroke-dasharray', '3,3');
+
+          // tooltip circle
+          closestPoints.forEach((d) => {
+            svg
+              .append('circle')
+              .attr('class', 'tooltip-circle')
+              .attr('cx', x(d.date))
+              .attr('cy', y(d.value))
+              .attr('r', 4)
+              .style('fill', colorScale[d.country])
+              .style('stroke', '#fff')
+              .style('stroke-width', 2);
+          });
+
+          tooltip
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+
+          let tooltipHtml = `<strong>Date: ${closestPoints[0].formattedDate}</strong><br>`;
+
+          closestPoints.forEach((d) => {
+            tooltipHtml += `${d.country}: <span class="tooltip-value">${d.value}</span><br>`;
+          });
+
+          tooltip
+            .html(tooltipHtml)
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 28 + 'px');
+        });
+
+        tooltipArea.on('mouseout', function () {
+          tooltip
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+
+          svg.selectAll('.tooltip-line').remove();
+          svg.selectAll('.tooltip-circle').remove();
+        });
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karl Josefsson Data Viz Final Project</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        header, main {
+            text-align: center;
+            margin: 0 auto;
+            max-width: 800px;
+        }
+
+        /* Generic chart container */
+        .viz-container {
+            margin: 20px auto;
+            width: 100%;
+            height: 600px;
+            position: relative;
+        }
+
+        /* Slider styling */
+        .viz-slider {
+            text-align: center;
+            margin: 10px 0;
+        }
+        .viz-slider > span {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        /* Tooltip styling */
+        .viz-tooltip {
+            position: absolute;
+            pointer-events: none;
+            z-index: 10;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Legend base styling */
+        .viz-legend {
+            position: absolute;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .viz-legend .title {
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        .viz-legend .gradient {
+            width: 200px;
+            height: 20px;
+            margin-bottom: 5px;
+        }
+
+        /* Heatmap specific positioning */
+        .chart-heatmap .viz-legend { bottom: 30px; right: 30px; }
+
+        /* Multiline chart layout */
+        .dashboard {
+            display: flex;
+            gap: 30px;
+            max-width: 95%;
+            margin: 0 auto;
+        }
+        .chart-container {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        .chart-container h3 {
+            margin-top: 0;
+            color: #555;
+            text-align: center;
+        }
+        .chart-container .viz-legend {
+            position: relative;
+            bottom: auto;
+            right: auto;
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .chart-container .legend-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        .chart-container .legend-color {
+            width: 20px;
+            height: 3px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sweden's COVID-19 approach, a success or a failure?</h1>
+        <h2>Author: Karl Fredrik Hu Josefsson</h2>
+        <h4>Email: kfhujosefsson@dons.usfca.edu</h4>
+    </header>
+    <main>
+        <p>When the COVID-19 pandemic struck, countries around the world scrambled to implement policies to slow the spread of the virus—lockdowns, mask mandates, and social distancing became the new normal. In Scandinavia, three neighboring countries—Sweden, Norway, and Denmark—share similar cultures, economies, healthcare systems, and demographics. But when the crisis hit, one of them made a very different choice. Looking at the lockdown time line below, you can see that there wasn't any lockdowns in Sweden, while Norway and Denmark implemented strict lockdowns. The question is, was this a success or a failure?</p>
+        <img src="lockdow-timeline.png" alt="Timeline of lockdowns in Scandinavian countries" style="max-width: 100%; height: auto; display: block; margin: 20px auto;">
+
+        <p>Now that we are familiar with the context, let's start looking at some COVID-19 data. As the pandemic started to take its flight during the spring of 2020, the number of confirmed COVID-19 cases started to rapidly increase. Looking at the heatmap below, the spring of 2020 all the way through half of 2021 shows a very big difference in regards to the countries response. During this period, you can clearly see a large contrast seeing Sweden blowing up in confirmed cases while its neighboring countries are in lockdown.</p>
+        <!-- Heatmap Section -->
+        <section class="chart-heatmap">
+            <h2>COVID Cases in Scandinavia Over Time</h2>
+            <div class="viz-container" id="heatmap-container"></div>
+            <div class="viz-slider">
+                <input type="range" id="date-slider" min="0" max="0" step="1">
+                <span id="current-date"></span>
+            </div>
+            <div class="viz-tooltip" id="heatmap-tooltip"></div>
+            <div class="viz-legend">
+                <div class="title">COVID-19 Cases</div>
+                <svg class="gradient"></svg>
+                <div style="display:flex;justify-content:space-between;font-size:12px;"><span>0</span><span>3.5M</span></div>
+            </div>
+        </section>
+        <p>Moving onto some Social & Economical Metrics, where we have two graphs showing annual GDP and unemployment rate.</p>
+        <!-- Multiline Chart Section -->
+        <section id="multiline-section">
+            <h2>Social & Economic Indicators for Nordic Countries</h2>
+            <div class="dashboard">
+                <div class="chart-container">
+                    <h3>GDP Annual % Change</h3>
+                    <div id="gdp-chart"></div>
+                    <div class="viz-legend" id="gdp-legend"></div>
+                </div>
+                <div class="chart-container">
+                    <h3>Unemployment Rate Annual Change (%)</h3>
+                    <div id="unemployment-chart"></div>
+                    <div class="viz-legend" id="unemployment-legend"></div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <script>
+      //  dimensions - adjusted for horizontal layout
+      const margin = {
+        top: 40,
+        right: 50,
+        bottom: 60,
+        left: 50,
+      };
+      const width = 550 - margin.left - margin.right; // Reduced width for side-by-side
+      const height = 400 - margin.top - margin.bottom;
+
+      //  colors
+      const colorScale = d3
+        .scaleOrdinal()
+        .domain(['Sweden', 'Norway', 'Denmark'])
+        .range(['#9acd32', '#0065a4', '#8b0000']);
+
+      // tooltip
+      const tooltip = d3
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('opacity', 0);
+
+      // process data
+      Promise.all([
+        d3.csv(
+          'https://gist.githubusercontent.com/karldif01/3ca5729a8d4ff777181aa803f4b53b62/raw/8d99d7510a9c3f0d99c4e8d684e4affffd1d055c/gistfile1.txt',
+        ),
+        d3.csv(
+          'https://gist.githubusercontent.com/karldif01/7832f6c3963b1b0a7582267630c90714/raw/8a989fbf46744922e99f0d56c201d04c8bce74df/gistfile1.txt',
+        ),
+      ]).then(function ([gdpData, unemploymentData]) {
+        //  GDP data
+        const gdpByCountry = {
+          Sweden: [],
+          Norway: [],
+          Denmark: [],
+        };
+
+        gdpData.forEach((d) => {
+          if (gdpByCountry.hasOwnProperty(d['Country'])) {
+            gdpByCountry[d['Country']].push({
+              country: d['Country'],
+              year: +d.Year,
+              value: +d['Annual Change (%)'],
+            });
+          }
+        });
+
+        // Sort by year
+        Object.keys(gdpByCountry).forEach((country) => {
+          gdpByCountry[country].sort(
+            (a, b) => a.year - b.year,
+          );
+        });
+
+        //  unemployment data
+        const unemploymentByCountry = {
+          Sweden: [],
+          Norway: [],
+          Denmark: [],
+        };
+
+        // parsing based on csv
+        const parseDate = d3.timeParse('%b %Y');
+
+        unemploymentData.forEach((d) => {
+          if (
+            unemploymentByCountry.hasOwnProperty(d.Country)
+          ) {
+            unemploymentByCountry[d.Country].push({
+              country: d.Country,
+              date: parseDate(d.Month),
+              value: +d['Annual Change (%)'],
+            });
+          }
+        });
+
+        // sort unemployment data by date
+        Object.keys(unemploymentByCountry).forEach(
+          (country) => {
+            unemploymentByCountry[country].sort(
+              (a, b) => a.date - b.date,
+            );
+          },
+        );
+
+        createGDPChart(gdpByCountry);
+
+        createUnemploymentChart(unemploymentByCountry);
+
+        // legends
+        createLegend('gdp-legend', [
+          'Sweden',
+          'Norway',
+          'Denmark',
+        ]);
+        createLegend('unemployment-legend', [
+          'Sweden',
+          'Norway',
+          'Denmark',
+        ]);
+      });
+
+      // gdp chart function
+      function createGDPChart(data) {
+        const svg = d3
+          .select('#gdp-chart')
+          .append('svg')
+          .attr('width', width + margin.left + margin.right)
+          .attr(
+            'height',
+            height + margin.top + margin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${margin.left},${margin.top})`,
+          );
+
+        const allYears = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) => allYears.push(d.year));
+        });
+
+        const minYear = d3.min(allYears);
+        const maxYear = d3.max(allYears);
+
+        // min max gdp
+        const allValues = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) =>
+            allValues.push(d.value),
+          );
+        });
+
+        const minValue = d3.min(allValues);
+        const maxValue = d3.max(allValues);
+
+        // x and y scales
+        const x = d3
+          .scaleLinear()
+          .domain([minYear, maxYear])
+          .range([0, width]);
+
+        const y = d3
+          .scaleLinear()
+          .domain([
+            minValue < 0 ? minValue * 1.1 : 0,
+            maxValue * 1.1,
+          ])
+          .nice()
+          .range([height, 0]);
+
+        // line generator
+        const line = d3
+          .line()
+          .x((d) => x(d.year))
+          .y((d) => y(d.value))
+          .curve(d3.curveMonotoneX);
+
+        // x axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(10)
+              .tickSize(-height)
+              .tickFormat(''),
+          );
+
+        // y axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .call(
+            d3
+              .axisLeft(y)
+              .ticks(10)
+              .tickSize(-width)
+              .tickFormat(''),
+          );
+
+        // x axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-x')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .tickValues(d3.range(minYear, maxYear + 1, 1))
+              .tickFormat(d3.format('d')),
+          );
+
+        // x axis label
+        svg
+          .append('text')
+          .attr('x', width / 2)
+          .attr('y', height + 40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('Year');
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('x', -height / 2)
+          .attr('y', -40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('GDP Annual % Change');
+
+        // lines for each country
+        Object.keys(data).forEach((country) => {
+          if (data[country].length > 0) {
+            const countryLine = svg
+              .append('path')
+              .datum(data[country])
+              .attr(
+                'class',
+                `line ${country.toLowerCase()}`,
+              )
+              .attr('d', line)
+              .attr('data-country', country);
+
+            //  dots for each data points
+            svg
+              .selectAll(`.dot-${country.toLowerCase()}`)
+              .data(data[country])
+              .enter()
+              .append('circle')
+              .attr('class', `dot-${country.toLowerCase()}`)
+              .attr('cx', (d) => x(d.year))
+              .attr('cy', (d) => y(d.value))
+              .attr('r', 4)
+              .attr('fill', colorScale(country))
+              .attr('data-country', country)
+              .style('cursor', 'pointer')
+              .on('mouseover', function (event, d) {
+                highlightCountry(d.country);
+
+                tooltip
+                  .transition()
+                  .duration(200)
+                  .style('opacity', 0.9);
+
+                tooltip
+                  .html(
+                    `
+                <strong>${d.country}</strong><br>
+                Year: ${d.year}<br>
+                GDP Change: <span class="tooltip-value">${d.value.toFixed(2)}%</span>
+              `,
+                  )
+                  .style('left', event.pageX + 10 + 'px')
+                  .style('top', event.pageY - 28 + 'px');
+              })
+              .on('mouseout', function () {
+                resetHighlight();
+
+                tooltip
+                  .transition()
+                  .duration(500)
+                  .style('opacity', 0);
+              });
+          }
+        });
+      }
+
+      // unemployment chart fucntion
+      function createUnemploymentChart(data) {
+        // Create SVG container
+        const svg = d3
+          .select('#unemployment-chart')
+          .append('svg')
+          .attr('width', width + margin.left + margin.right)
+          .attr(
+            'height',
+            height + margin.top + margin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${margin.left},${margin.top})`,
+          );
+
+        const allDates = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) => allDates.push(d.date));
+        });
+
+        const minDate = d3.min(allDates);
+        const maxDate = d3.max(allDates);
+
+        // min max
+        const allValues = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) =>
+            allValues.push(d.value),
+          );
+        });
+
+        const minValue = d3.min(allValues);
+        const maxValue = d3.max(allValues);
+
+        // scales
+        const x = d3
+          .scaleTime()
+          .domain([minDate, maxDate])
+          .range([0, width]);
+
+        const y = d3
+          .scaleLinear()
+          .domain([
+            minValue < 0 ? minValue * 1.1 : 0,
+            maxValue * 1.1,
+          ])
+          .nice()
+          .range([height, 0]);
+
+        // line generator
+        const line = d3
+          .line()
+          .x((d) => x(d.date))
+          .y((d) => y(d.value))
+          .curve(d3.curveMonotoneX);
+
+        // x axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(10)
+              .tickSize(-height)
+              .tickFormat(''),
+          );
+
+        // y axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .call(
+            d3
+              .axisLeft(y)
+              .ticks(10)
+              .tickSize(-width)
+              .tickFormat(''),
+          );
+
+        // x axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-x')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(d3.timeYear.every(1))
+              .tickFormat(d3.timeFormat('%Y')),
+          );
+
+        // x axis label
+        svg
+          .append('text')
+          .attr('x', width / 2)
+          .attr('y', height + 40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('Year');
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('x', -height / 2)
+          .attr('y', -40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('Unemployment Rate Annual Change (%)');
+
+        // lines for each country
+        Object.keys(data).forEach((country) => {
+          if (data[country].length > 0) {
+            const countryLine = svg
+              .append('path')
+              .datum(data[country])
+              .attr(
+                'class',
+                `line ${country.toLowerCase()}`,
+              )
+              .attr('d', line)
+              .attr('data-country', country);
+
+            // dots for data points
+            svg
+              .selectAll(
+                `.dot-${country.toLowerCase()}-unempl`,
+              )
+              .data(data[country])
+              .enter()
+              .append('circle')
+              .attr('class', `dot-${country.toLowerCase()}`)
+              .attr('cx', (d) => x(d.date))
+              .attr('cy', (d) => y(d.value))
+              .attr('r', 4)
+              .attr('fill', colorScale(country))
+              .attr('data-country', country)
+              .style('cursor', 'pointer')
+              .on('mouseover', function (event, d) {
+                highlightCountry(d.country);
+
+                tooltip
+                  .transition()
+                  .duration(200)
+                  .style('opacity', 0.9);
+
+                tooltip
+                  .html(
+                    `
+                <strong>${d.country}</strong><br>
+                Date: ${d3.timeFormat('%b %Y')(d.date)}<br>
+                Unemployment Change: <span class="tooltip-value">${d.value.toFixed(2)}%</span>
+              `,
+                  )
+                  .style('left', event.pageX + 10 + 'px')
+                  .style('top', event.pageY - 28 + 'px');
+              })
+              .on('mouseout', function () {
+                resetHighlight();
+
+                tooltip
+                  .transition()
+                  .duration(500)
+                  .style('opacity', 0);
+              });
+          }
+        });
+      }
+
+      // legend function
+      function createLegend(containerId, countries) {
+        const legendContainer = d3.select(
+          `#${containerId}`,
+        );
+
+        countries.forEach((country) => {
+          const legendItem = legendContainer
+            .append('div')
+            .attr('class', 'legend-item')
+            .attr('data-country', country)
+            .on('mouseover', function () {
+              highlightCountry(country);
+            })
+            .on('mouseout', function () {
+              resetHighlight();
+            });
+
+          legendItem
+            .append('div')
+            .attr('class', 'legend-color')
+            .style('background-color', colorScale(country));
+
+          legendItem.append('span').text(country);
+        });
+      }
+
+      // highlighting function
+      function highlightCountry(country) {
+        // Fade out all lines
+        d3.selectAll('.line')
+          .classed('faded', true)
+          .classed('highlighted', false);
+
+        // Highlight selected country
+        d3.selectAll(`.${country.toLowerCase()}`)
+          .classed('faded', false)
+          .classed('highlighted', true);
+
+        d3.selectAll('circle').style('opacity', 0.2);
+
+        d3.selectAll(
+          `circle[data-country="${country}"]`,
+        ).style('opacity', 1);
+
+        d3.selectAll('.legend-item').style('opacity', 0.4);
+
+        d3.selectAll(
+          `.legend-item[data-country="${country}"]`,
+        ).style('opacity', 1);
+      }
+
+      // reseting highlight function
+      function resetHighlight() {
+        d3.selectAll('.line')
+          .classed('faded', false)
+          .classed('highlighted', false);
+
+        d3.selectAll('circle').style('opacity', 1);
+
+        d3.selectAll('.legend-item').style('opacity', 1);
+      }
+    </script>
+  </body>
+</html>
