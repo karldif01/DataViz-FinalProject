@@ -1,215 +1,1252 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karl Josefsson Data Viz Final Project</title>
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <style>
-        header, main {
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Karl Josefsson Data Viz Final Project</title>
+      <script src="https://d3js.org/d3.v7.min.js"></script>
+      <style>
+          header {
             text-align: center;
             margin: 0 auto;
             max-width: 800px;
-        }
-        /* Heatmap styles */
-        #heatmap-container {
-            margin: 20px auto;
-            width: 100%;
-            height: 600px;
-            position: relative;
-        }
-        svg {
-            width: 100%;
-            height: 600px;
-        }
-        #slider-container {
+          }
+          body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+          }
+          .paragraph {
+            font-size: 1.2em;
+            line-height: 1.5;
             text-align: center;
-            margin: 10px 0;
-        }
-        #current-date {
-            font-weight: bold;
-            margin-left: 10px;
-        }
-        .country {
-            stroke: #fff;
-            stroke-width: 0.5px;
-            cursor: pointer;
-        }
-        .tooltip {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            font-style: times;
+          }
+          .chart-container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            flex: 1; /* Added to make containers share space equally */
+          }
+          .dashboard {
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+            max-width: 100%;
+            margin: 0 auto;
+            margin-bottom: 40px;
+            justify-content: center;
+          }
+
+          .hospitality-dashboard {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            justify-content: center;
+            margin-bottom: 40px;
+          }
+          h1 {
+            text-align: center;
+            color: #333;
+          }
+
+          h2 {
+            margin-top: 0;
+            color: #555;
+            text-align: center; /* Center indv chart titles */
+          }
+          .axis-x path,
+          .axis-y path {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+          }
+
+          .axis-x .tick line,
+          .axis-y .tick line {
+            stroke: #ccc;
+            stroke-dasharray: 2, 2;
+          }
+
+          .axis text {
+            font-size: 12px;
+          }
+
+          .line {
+            fill: none;
+            stroke-width: 2.5px;
+          }
+
+          .sweden {
+            stroke: #9acd32;
+          }
+
+          .norway {
+            stroke: #0065a4;
+          }
+
+          .denmark {
+            stroke: #8b0000;
+          }
+
+          .denmark-line {
+            stroke: #8b0000;
+          }
+
+          .sweden-line {
+            stroke: #9acd32;
+          }
+
+          .norway-line {
+            stroke: #0065a4;
+          }
+
+          .line.faded {
+            opacity: 0.2;
+          }
+
+          .line.highlighted {
+            stroke-width: 3.5px;
+          }
+
+          .tooltip {
             position: absolute;
-            pointer-events: none;
-            z-index: 10;
-            padding: 8px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #ccc;
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #666;
             border-radius: 4px;
-            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
-            font-size: 14px;
-            display: none;
-        }
-        .legend {
-            position: absolute;
-            bottom: 30px;
-            right: 30px;
-            background: rgba(255, 255, 255, 0.9);
             padding: 10px;
-            border-radius: 4px;
-            border: 1px solid #ccc;
-            box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
-        }
-        .legend-title {
+            font-size: 12px;
+            pointer-events: none;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+          }
+
+          .tooltip-value {
             font-weight: bold;
-            text-align: center;
-            margin-bottom: 5px;
-        }
-        .legend-container {
-            height: 20px;
-            width: 200px;
-            margin-bottom: 5px;
-        }
-    </style>
-</head>
-<body>
-    <header>
-        <h1>Sweden's COVID-19 approach, a success or a failure?</h1>
-        <h2>Author: Karl Fredrik Hu Josefsson</h2>
-        <h4>Email: kfhujosefsson@dons.usfca.edu</h4>
-    </header>
+          }
 
-    <main>
-        <p>When the COVID-19 pandemic struck, countries around the world scrambled to implement policies to slow the spread of the virus—lockdowns, mask mandates, and social distancing became the new normal. In Scandinavia, three neighboring countries—Sweden, Norway, and Denmark—share similar cultures, economies, healthcare systems, and demographics. But when the crisis hit, one of them made a very different choice. Looking at the lockdown time line below, you can see that there wasn't any lockdowns in Sweden, while Norway and Denmark implemented strict lockdowns. The question is, was this a success or a failure?</p>
-        <img src="lockdow-timeline.png" alt="Timeline of lockdowns in Scandinavian countries" style="max-width: 100%; height: auto; display: block; margin: 20px auto;">
+          .grid line {
+            stroke: #e0e0e0;
+            shape-rendering: crispEdges;
+          }
 
-        <p>Now that we are familiar with the context, let's start looking at some COVID-19 data. As the pandemic started to take its flight during the spring of 2020, the number of confirmed COVID-19 cases started to rapidly increase. Looking at the heatmap below, the spring of 2020 all the way through half of 2021 shows a very big difference in regards to the countries response. During this period, you can clearly see a large contrast seeing Sweden blowing up in confirmed cases while its neighboring countries are in lockdown.</p>
+          .grid path {
+            stroke-width: 0;
+          }
 
-        <!-- Heatmap Section -->
-        <section>
-            <h2>COVID Cases in Scandinavia Over Time</h2>
-            <div id="heatmap-container"></div>
-            <div id="slider-container">
-                <input type="range" id="date-slider" min="0" max="0" step="1">
-                <span id="current-date"></span>
-            </div>
-            <div class="tooltip" id="heatmap-tooltip"></div>
-        </section>
-    </main>
+          .legend {
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+            font-size: 14px;
+          }
 
-    <script>
-    // Heatmap script adapted from heatmap.html
-    const width = 800, height = 600;
-    const svg = d3.select('#heatmap-container')
-      .append('svg')
-      .attr('viewBox', `0 0 ${width} ${height}`)
-      .attr('preserveAspectRatio', 'xMidYMid meet');
+          .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 0 15px;
+            cursor: pointer;
+          }
 
-    const tooltip = d3.select('#heatmap-tooltip');
+          .legend-color {
+            width: 20px;
+            height: 3px;
+            margin-right: 5px;
+          }
+      </style>
+  </head>
+  <body>
+      <header>
+          <h1>Sweden's COVID-19 approach, a success or a failure?</h1>
+          <h2>Author: Karl Fredrik Hu Josefsson</h2>
+          <h4>Email: kfhujosefsson@dons.usfca.edu</h4>
+      </header>
 
-    Promise.all([
-      d3.json('https://raw.githubusercontent.com/johan/world.geo.json/master/countries.geo.json'),
-      d3.csv('https://gist.githubusercontent.com/karldif01/9daa30f0d38b7cd36f17872e5a893729/raw/4d7eff95c8cf5d6e5e1b0d79990863d8dccf4c07/gistfile1.txt', d => ({
-        country: d.Country,
-        date: new Date(d.date),
-        cases: +d.total_cases
-      }))
-    ]).then(([geo, rows]) => {
-      const scandi = new Set(['Sweden','Denmark','Norway']);
-      geo.features = geo.features.filter(f => scandi.has(f.properties.name));
+      // create a paragraph element
+      <p class="paragraph">
+          This project aims to analyze the COVID-19 response in Sweden, focusing on the effectiveness of their approach compared to other countries. The analysis will include data visualization and statistical analysis to draw conclusions about the success or failure of Sweden's strategy.
+          The project will utilize various data sources, including COVID-19 case numbers, vaccination rates, and public health policies. The goal is to provide a comprehensive overview of Sweden's response to the pandemic and its impact on public health.
+          The analysis will be presented through interactive visualizations, allowing users to explore the data and draw their own conclusions. The project will also include a discussion of the implications of Sweden's approach for future public health policy and pandemic preparedness.
+          The final project will be presented in a web-based format, making it accessible to a wide audience. The use of D3.js for data visualization will enhance the presentation and allow for dynamic exploration of the data.
+          The project will be structured as follows:
+      </p>
 
-      const dataByDate = d3.group(rows, d => +d.date);
-      const dates = Array.from(dataByDate.keys()).sort((a,b) => a - b);
-      const lookup = new Map();
-      dataByDate.forEach((recs, t) => {
-        lookup.set(t, new Map(recs.map(r => [r.country, r.cases])));
+      // timeline
+
+      <p class="paragraph">
+        This project aims to analyze the COVID-19 response in Sweden, focusing on the effectiveness of their approach compared to other countries. The analysis will include data visualization and statistical analysis to draw conclusions about the success or failure of Sweden's strategy.
+        The project will utilize various data sources, including COVID-19 case numbers, vaccination rates, and public health policies. The goal is to provide a comprehensive overview of Sweden's response to the pandemic and its impact on public health.
+        The analysis will be presented through interactive visualizations, allowing users to explore the data and draw their own conclusions. The project will also include a discussion of the implications of Sweden's approach for future public health policy and pandemic preparedness.
+        The final project will be presented in a web-based format, making it accessible to a wide audience. The use of D3.js for data visualization will enhance the presentation and allow for dynamic exploration of the data.
+        The project will be structured as follows:
+      </p>
+
+      // heatmap
+
+
+      <p class="paragraph">
+        This project aims to analyze the COVID-19 response in Sweden, focusing on the effectiveness of their approach compared to other countries. The analysis will include data visualization and statistical analysis to draw conclusions about the success or failure of Sweden's strategy.
+        The project will utilize various data sources, including COVID-19 case numbers, vaccination rates, and public health policies. The goal is to provide a comprehensive overview of Sweden's response to the pandemic and its impact on public health.
+        The analysis will be presented through interactive visualizations, allowing users to explore the data and draw their own conclusions. The project will also include a discussion of the implications of Sweden's approach for future public health policy and pandemic preparedness.
+        The final project will be presented in a web-based format, making it accessible to a wide audience. The use of D3.js for data visualization will enhance the presentation and allow for dynamic exploration of the data.
+        The project will be structured as follows:
+      </p>
+
+
+      // GDP & Unemployment
+      <div class="dashboard">
+        <div class="chart-container">
+          <h2>GDP Annual % Change</h2>
+          <div id="gdp-chart"></div>
+          <div class="legend" id="gdp-legend"></div>
+        </div>
+  
+        <div class="chart-container">
+          <h2>Unemployment Rate Annual Change (%)</h2>
+          <div id="unemployment-chart"></div>
+          <div class="legend" id="unemployment-legend"></div>
+        </div>
+      </div>
+
+
+      <p class="paragraph">
+        This project aims to analyze the COVID-19 response in Sweden, focusing on the effectiveness of their approach compared to other countries. The analysis will include data visualization and statistical analysis to draw conclusions about the success or failure of Sweden's strategy.
+        The project will utilize various data sources, including COVID-19 case numbers, vaccination rates, and public health policies. The goal is to provide a comprehensive overview of Sweden's response to the pandemic and its impact on public health.
+        The analysis will be presented through interactive visualizations, allowing users to explore the data and draw their own conclusions. The project will also include a discussion of the implications of Sweden's approach for future public health policy and pandemic preparedness.
+        The final project will be presented in a web-based format, making it accessible to a wide audience. The use of D3.js for data visualization will enhance the presentation and allow for dynamic exploration of the data.
+        The project will be structured as follows:
+      </p>
+
+
+
+      // hospitality dashboard
+
+
+      <h1>Hospital occupancy</h1>
+    <div class="hospitality-dashboard">
+      <div class="chart-container">
+        <h2>Denmark Hospital Occupancy</h2>
+        <div id="denmark-chart"></div>
+      </div>
+      <div class="chart-container">
+        <h2>Norway Hospital Occupancy</h2>
+        <div id="norway-chart"></div>
+      </div>
+      <div class="chart-container">
+        <h2>Sweden Hospital Occupancy</h2>
+        <div id="sweden-chart"></div>
+      </div>
+    </div>
+
+    <div style="margin-top: 30px; margin-bottom: 40px">
+      <div
+        class="chart-container"
+        style="max-width: 1160px; margin: 0 auto"
+      >
+        <h2>Combined Hospital Occupancy</h2>
+        <div id="combined-chart"></div>
+        <div
+          class="legend"
+          id="combined-legend"
+          style="
+            display: flex;
+            justify-content: center;
+            margin-top: 10px;
+          "
+        ></div>
+      </div>
+    </div>
+
+
+
+      <p class="paragraph">
+        This project aims to analyze the COVID-19 response in Sweden, focusing on the effectiveness of their approach compared to other countries. The analysis will include data visualization and statistical analysis to draw conclusions about the success or failure of Sweden's strategy.
+        The project will utilize various data sources, including COVID-19 case numbers, vaccination rates, and public health policies. The goal is to provide a comprehensive overview of Sweden's response to the pandemic and its impact on public health.
+        The analysis will be presented through interactive visualizations, allowing users to explore the data and draw their own conclusions. The project will also include a discussion of the implications of Sweden's approach for future public health policy and pandemic preparedness.
+        The final project will be presented in a web-based format, making it accessible to a wide audience. The use of D3.js for data visualization will enhance the presentation and allow for dynamic exploration of the data.
+        The project will be structured as follows:
+      </p>
+
+      <p class="paragraph">
+        This project aims to analyze the COVID-19 response in Sweden, focusing on the effectiveness of their approach compared to other countries. The analysis will include data visualization and statistical analysis to draw conclusions about the success or failure of Sweden's strategy.
+        The project will utilize various data sources, including COVID-19 case numbers, vaccination rates, and public health policies. The goal is to provide a comprehensive overview of Sweden's response to the pandemic and its impact on public health.
+        The analysis will be presented through interactive visualizations, allowing users to explore the data and draw their own conclusions. The project will also include a discussion of the implications of Sweden's approach for future public health policy and pandemic preparedness.
+        The final project will be presented in a web-based format, making it accessible to a wide audience. The use of D3.js for data visualization will enhance the presentation and allow for dynamic exploration of the data.
+        The project will be structured as follows:
+      </p>
+
+
+
+      <script>
+        const margin = {
+        top: 40,
+        right: 50,
+        bottom: 60,
+        left: 50,
+      };
+      const width = 550 - margin.left - margin.right; // Reduced width for side-by-side
+      const height = 400 - margin.top - margin.bottom;
+
+      //  colors
+      const colorScale = d3
+        .scaleOrdinal()
+        .domain(['Sweden', 'Norway', 'Denmark'])
+        .range(['#9acd32', '#0065a4', '#8b0000']);
+
+      // tooltip
+      const tooltip = d3
+        .select('body')
+        .append('div')
+        .attr('class', 'tooltip')
+        .style('opacity', 0);
+
+      // process data
+      Promise.all([
+        d3.csv(
+          'https://gist.githubusercontent.com/karldif01/3ca5729a8d4ff777181aa803f4b53b62/raw/8d99d7510a9c3f0d99c4e8d684e4affffd1d055c/gistfile1.txt',
+        ),
+        d3.csv(
+          'https://gist.githubusercontent.com/karldif01/7832f6c3963b1b0a7582267630c90714/raw/8a989fbf46744922e99f0d56c201d04c8bce74df/gistfile1.txt',
+        ),
+      ]).then(function ([gdpData, unemploymentData]) {
+        //  GDP data
+        const gdpByCountry = {
+          Sweden: [],
+          Norway: [],
+          Denmark: [],
+        };
+
+        gdpData.forEach((d) => {
+          if (gdpByCountry.hasOwnProperty(d['Country'])) {
+            gdpByCountry[d['Country']].push({
+              country: d['Country'],
+              year: +d.Year,
+              value: +d['Annual Change (%)'],
+            });
+          }
+        });
+
+        // Sort by year
+        Object.keys(gdpByCountry).forEach((country) => {
+          gdpByCountry[country].sort(
+            (a, b) => a.year - b.year,
+          );
+        });
+
+        //  unemployment data
+        const unemploymentByCountry = {
+          Sweden: [],
+          Norway: [],
+          Denmark: [],
+        };
+
+        // parsing based on csv
+        const parseDate = d3.timeParse('%b %Y');
+
+        unemploymentData.forEach((d) => {
+          if (
+            unemploymentByCountry.hasOwnProperty(d.Country)
+          ) {
+            unemploymentByCountry[d.Country].push({
+              country: d.Country,
+              date: parseDate(d.Month),
+              value: +d['Annual Change (%)'],
+            });
+          }
+        });
+
+        // sort unemployment data by date
+        Object.keys(unemploymentByCountry).forEach(
+          (country) => {
+            unemploymentByCountry[country].sort(
+              (a, b) => a.date - b.date,
+            );
+          },
+        );
+
+        createGDPChart(gdpByCountry);
+
+        createUnemploymentChart(unemploymentByCountry);
+
+
       });
 
-      const projection = d3.geoMercator().fitSize([width, height], geo);
-      const path = d3.geoPath().projection(projection);
+      // gdp chart function
+      function createGDPChart(data) {
+        const svg = d3
+          .select('#gdp-chart')
+          .append('svg')
+          .attr('width', width + margin.left + margin.right)
+          .attr(
+            'height',
+            height + margin.top + margin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${margin.left},${margin.top})`,
+          );
 
-      const maxColorValue = 3500000;
-      const color = d3.scaleSequential(d3.interpolateOrRd).domain([0, maxColorValue]);
+        const allYears = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) => allYears.push(d.year));
+        });
 
-      const countries = svg.append('g')
-        .selectAll('path')
-        .data(geo.features)
-        .join('path')
-        .attr('class', 'country')
-        .attr('d', path)
-        .attr('fill', '#eee')
-        .on('mouseover', (event, d) => {
-          tooltip.style('display', 'block');
-        })
-        .on('mousemove', (event, d) => {
-          const date = +slider.property('value');
-          const t = dates[date];
-          const dateStr = d3.timeFormat('%Y-%m-%d')(new Date(t));
-          const name = d.properties.name;
-          const c = lookup.get(t).get(name) || 0;
-          tooltip
-            .html(`<strong>${name}</strong><br/>Date: ${dateStr}<br/>Cases: ${c.toLocaleString()}`)
-            .style('left', event.pageX + 10 + 'px')
-            .style('top', event.pageY - 28 + 'px');
-        })
-        .on('mouseout', () => tooltip.style('display', 'none'));
+        const minYear = d3.min(allYears);
+        const maxYear = d3.max(allYears);
 
-      const slider = d3.select('#date-slider')
-        .attr('max', dates.length - 1)
-        .property('value', 0)
-        .on('input', update);
+        // min max gdp
+        const allValues = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) =>
+            allValues.push(d.value),
+          );
+        });
 
-      d3.select('#current-date').text(d3.timeFormat('%Y-%m-%d')(new Date(dates[0])));
+        const minValue = d3.min(allValues);
+        const maxValue = d3.max(allValues);
 
-      const legend = d3.select('body')
-        .append('div')
-        .attr('class', 'legend');
-      legend.append('div').attr('class', 'legend-title').text('COVID-19 Cases');
-      const legendContainer = legend.append('div').attr('class', 'legend-container');
-      const legendSvg = legendContainer.append('svg').attr('width', 200).attr('height', 20);
-      const defs = legendSvg.append('defs');
-      const linearGradient = defs.append('linearGradient').attr('id', 'legend-gradient')
-        .attr('x1','0%').attr('y1','0%').attr('x2','100%').attr('y2','0%');
-      const numStops = 10;
-      for (let i=0; i<=numStops; i++) {
-        const offset = i / numStops;
-        const stopValue = offset * maxColorValue;
-        linearGradient.append('stop')
-          .attr('offset', `${offset*100}%`)
-          .attr('stop-color', color(stopValue));
-      }
-      legendSvg.append('rect').attr('width', 200).attr('height', 20).style('fill', 'url(#legend-gradient)');
-      const labels = legend.append('div').style('display','flex').style('justify-content','space-between').style('font-size','12px');
-      labels.append('span').text('0');
-      labels.append('span').text('3.5M');
+        // x and y scales
+        const x = d3
+          .scaleLinear()
+          .domain([minYear, maxYear])
+          .range([0, width]);
 
-      update();
-      function update() {
-        const i = +slider.property('value');
-        const t = dates[i];
-        const dateStr = d3.timeFormat('%Y-%m-%d')(new Date(t));
-        d3.select('#current-date').text(dateStr);
-        const todayMap = lookup.get(t);
-        countries.attr('fill', d => {
-          const name = d.properties.name;
-          const c = todayMap.get(name) || 0;
-          return c ? color(c) : '#ccc';
+        const y = d3
+          .scaleLinear()
+          .domain([
+            minValue < 0 ? minValue * 1.1 : 0,
+            maxValue * 1.1,
+          ])
+          .nice()
+          .range([height, 0]);
+
+        // line generator
+        const line = d3
+          .line()
+          .x((d) => x(d.year))
+          .y((d) => y(d.value))
+          .curve(d3.curveMonotoneX);
+
+        // x axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(10)
+              .tickSize(-height)
+              .tickFormat(''),
+          );
+
+        // y axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .call(
+            d3
+              .axisLeft(y)
+              .ticks(10)
+              .tickSize(-width)
+              .tickFormat(''),
+          );
+
+        // x axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-x')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .tickValues(d3.range(minYear, maxYear + 1, 1))
+              .tickFormat(d3.format('d')),
+          );
+
+        // x axis label
+        svg
+          .append('text')
+          .attr('x', width / 2)
+          .attr('y', height + 40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('Year');
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('x', -height / 2)
+          .attr('y', -40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('GDP Annual % Change');
+
+        // lines for each country
+        Object.keys(data).forEach((country) => {
+          if (data[country].length > 0) {
+            const countryLine = svg
+              .append('path')
+              .datum(data[country])
+              .attr(
+                'class',
+                `line ${country.toLowerCase()}`,
+              )
+              .attr('d', line)
+              .attr('data-country', country);
+
+            //  dots for each data points
+            svg
+              .selectAll(`.dot-${country.toLowerCase()}`)
+              .data(data[country])
+              .enter()
+              .append('circle')
+              .attr('class', `dot-${country.toLowerCase()}`)
+              .attr('cx', (d) => x(d.year))
+              .attr('cy', (d) => y(d.value))
+              .attr('r', 4)
+              .attr('fill', colorScale(country))
+              .attr('data-country', country)
+              .style('cursor', 'pointer')
+              .on('mouseover', function (event, d) {
+                // when hover over one country
+                highlightCountry(d.country);
+
+                tooltip
+                  .transition()
+                  .duration(200)
+                  .style('opacity', 0.9);
+
+                tooltip
+                  .html(
+                    `
+                <strong>${d.country}</strong><br>
+                Year: ${d.year}<br>
+                GDP Change: <span class="tooltip-value">${d.value.toFixed(2)}%</span>
+              `,
+                  )
+                  .style('left', event.pageX + 10 + 'px')
+                  .style('top', event.pageY - 28 + 'px');
+              })
+              .on('mouseout', function () {
+                resetHighlight();
+
+                tooltip
+                  .transition()
+                  .duration(500)
+                  .style('opacity', 0);
+              });
+          }
         });
       }
-    });
-    </script>
 
-    <p>
-        With a sudden new disease, a lot of problem in healthcare can arise. Below we can see a chart of the respective hospital occupancy. Here you can see that the trend among the three are pretty similar. However, looking at the combined graph we can see how Sweden's hospital occupancy is much higher than the other two countries. This could be due to the fact that Sweden didn't have any lockdowns, and therefore a lot of people were infected at the same time.
-    </p>
+      // unemployment chart fucntion
+      function createUnemploymentChart(data) {
+        // Create SVG container
+        const svg = d3
+          .select('#unemployment-chart')
+          .append('svg')
+          .attr('width', width + margin.left + margin.right)
+          .attr(
+            'height',
+            height + margin.top + margin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${margin.left},${margin.top})`,
+          );
 
-    <li> Small Multiples Charts - <a href="https://vizhub.com/karldif01/6935595019d748c8bd4f746977672f51">Hospital occupancy</a></li>
+        const allDates = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) => allDates.push(d.date));
+        });
 
-    <p>
-        Moving onto some Social & Economical Metrics, we have two graphs showing annual GDP and unemployment rate. Here we can see Sweden seeing the biggest fall in terms of GDP as well as a big rise in unemployment.
-    </p>
+        const minDate = d3.min(allDates);
+        const maxDate = d3.max(allDates);
 
-    <li> Multiline Charts - <a href="https://vizhub.com/karldif01/9c1964e21c75408c9baf5cb9331a1e22">GDP & Unemployment</a></li>
-    
-    <p> Lastly and most importantly, here is an animation of deaths per 10 million as we move through the pandemic. Comparing the three lines shows that Sweden had a early rise while the Denmark and Norway's numbers are low, which align well with the peridods of Sweden not putting in restrictions which is what the other countries did to stay afloat. </p>
+        // min max
+        const allValues = [];
+        Object.values(data).forEach((countryData) => {
+          countryData.forEach((d) =>
+            allValues.push(d.value),
+          );
+        });
 
-    <li> Animated Scatterplot/LineChart - <a href="https://vizhub.com/karldif01/6ebc91d5d7b249c18d6d07c19e5f6ff4">Deaths per 10 million</a></li>
-</body>
+        const minValue = d3.min(allValues);
+        const maxValue = d3.max(allValues);
+
+        // scales
+        const x = d3
+          .scaleTime()
+          .domain([minDate, maxDate])
+          .range([0, width]);
+
+        const y = d3
+          .scaleLinear()
+          .domain([
+            minValue < 0 ? minValue * 1.1 : 0,
+            maxValue * 1.1,
+          ])
+          .nice()
+          .range([height, 0]);
+
+        // line generator
+        const line = d3
+          .line()
+          .x((d) => x(d.date))
+          .y((d) => y(d.value))
+          .curve(d3.curveMonotoneX);
+
+        // x axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(10)
+              .tickSize(-height)
+              .tickFormat(''),
+          );
+
+        // y axis grid lines
+        svg
+          .append('g')
+          .attr('class', 'grid')
+          .call(
+            d3
+              .axisLeft(y)
+              .ticks(10)
+              .tickSize(-width)
+              .tickFormat(''),
+          );
+
+        // x axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-x')
+          .attr('transform', `translate(0,${height})`)
+          .call(
+            d3
+              .axisBottom(x)
+              .ticks(d3.timeYear.every(1))
+              .tickFormat(d3.timeFormat('%Y')),
+          );
+
+        // x axis label
+        svg
+          .append('text')
+          .attr('x', width / 2)
+          .attr('y', height + 40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('Year');
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('x', -height / 2)
+          .attr('y', -40)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '14px')
+          .text('Unemployment Rate Annual Change (%)');
+
+        // lines for each country
+        Object.keys(data).forEach((country) => {
+          if (data[country].length > 0) {
+            const countryLine = svg
+              .append('path')
+              .datum(data[country])
+              .attr(
+                'class',
+                `line ${country.toLowerCase()}`,
+              )
+              .attr('d', line)
+              .attr('data-country', country);
+
+            // dots for data points
+            svg
+              .selectAll(
+                `.dot-${country.toLowerCase()}-unempl`,
+              )
+              .data(data[country])
+              .enter()
+              .append('circle')
+              .attr('class', `dot-${country.toLowerCase()}`)
+              .attr('cx', (d) => x(d.date))
+              .attr('cy', (d) => y(d.value))
+              .attr('r', 4)
+              .attr('fill', colorScale(country))
+              .attr('data-country', country)
+              .style('cursor', 'pointer')
+              .on('mouseover', function (event, d) {
+                highlightCountry(d.country);
+
+                tooltip
+                  .transition()
+                  .duration(200)
+                  .style('opacity', 0.9);
+
+                tooltip
+                  .html(
+                    `
+                <strong>${d.country}</strong><br>
+                Date: ${d3.timeFormat('%b %Y')(d.date)}<br>
+                Unemployment Change: <span class="tooltip-value">${d.value.toFixed(2)}%</span>
+              `,
+                  )
+                  .style('left', event.pageX + 10 + 'px')
+                  .style('top', event.pageY - 28 + 'px');
+              })
+              .on('mouseout', function () {
+                resetHighlight();
+
+                tooltip
+                  .transition()
+                  .duration(500)
+                  .style('opacity', 0);
+              });
+          }
+        });
+      }
+
+
+      // highlighting function
+      function highlightCountry(country) {
+        // Fade out all lines
+        d3.selectAll('.line')
+          .classed('faded', true)
+          .classed('highlighted', false);
+
+        // Highlight selected country
+        d3.selectAll(`.${country.toLowerCase()}`)
+          .classed('faded', false)
+          .classed('highlighted', true);
+
+        d3.selectAll('circle').style('opacity', 0.2);
+
+        d3.selectAll(
+          `circle[data-country="${country}"]`,
+        ).style('opacity', 1);
+
+        d3.selectAll('.legend-item').style('opacity', 0.4);
+
+        d3.selectAll(
+          `.legend-item[data-country="${country}"]`,
+        ).style('opacity', 1);
+      }
+
+      // reseting highlight function
+      function resetHighlight() {
+        d3.selectAll('.line')
+          .classed('faded', false)
+          .classed('highlighted', false);
+
+        d3.selectAll('circle').style('opacity', 1);
+
+        d3.selectAll('.legend-item').style('opacity', 1);
+      }
+
+
+      // HOSPITALITY SECTION
+
+      const hospitality_margin = {
+        top: 20,
+        right: 20,
+        bottom: 40,
+        left: 50,
+      };
+      const hospitality_width =
+        350 -
+        hospitality_margin.left -
+        hospitality_margin.right;
+      const hospitality_height =
+        300 -
+        hospitality_margin.top -
+        hospitality_margin.bottom;
+
+      // Color scale
+      const hospitality_colorScale = {
+        Sweden: '#9acd32',
+        Norway: '#0065A4',
+        Denmark: '#8b0000',
+      };
+
+      // data
+      function loadData() {
+        d3.csv(
+          'https://gist.githubusercontent.com/karldif01/b47551c67889816e4caa36500377e080/raw/9c9dc3dc1223cf788e663dc5186c8ff279594f6b/gistfile1.txt',
+        ).then((csvData) => {
+          // Group by country
+          const dataByCountry = {
+            Denmark: [],
+            Norway: [],
+            Sweden: [],
+          };
+
+          csvData.forEach((d) => {
+            if (
+              d.indicator === 'Daily hospital occupancy' &&
+              dataByCountry.hasOwnProperty(d.Country)
+            ) {
+              dataByCountry[d.Country].push({
+                date: new Date(d.date),
+                value: +d.value,
+                formattedDate: d.date,
+              });
+            }
+          });
+
+          // Sort by date for each country
+          Object.keys(dataByCountry).forEach((country) => {
+            dataByCountry[country].sort(
+              (a, b) => a.date - b.date,
+            );
+          });
+
+          // charts
+          createChart(
+            'denmark-chart',
+            dataByCountry['Denmark'],
+            'Denmark',
+          );
+          createChart(
+            'norway-chart',
+            dataByCountry['Norway'],
+            'Norway',
+          );
+          createChart(
+            'sweden-chart',
+            dataByCountry['Sweden'],
+            'Sweden',
+          );
+
+          // combined chart
+          createCombinedChart(dataByCountry);
+        });
+      }
+
+      // line chart
+      function createChart(elementId, data, country) {
+        const svg = d3
+          .select(`#${elementId}`)
+          .append('svg')
+          .attr(
+            'width',
+            hospitality_width +
+              hospitality_margin.left +
+              hospitality_margin.right,
+          )
+          .attr(
+            'height',
+            hospitality_height +
+              hospitality_margin.top +
+              hospitality_margin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${hospitality_margin.left},${hospitality_margin.top})`,
+          );
+
+        //  scales
+        const x = d3
+          .scaleTime()
+          .domain(d3.extent(data, (d) => d.date))
+          .range([0, hospitality_width]);
+
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(data, (d) => d.value)])
+          .nice()
+          .range([hospitality_height, 0]);
+
+        svg
+          .append('g')
+          .attr('class', 'axis-x')
+          .attr(
+            'transform',
+            `translate(0,${hospitality_height})`,
+          )
+          .call(
+            d3
+              .axisBottom(x)
+              .tickValues([
+                // Removed 2020 tick
+                new Date('2021-01-01'),
+                new Date('2022-01-01'),
+              ])
+              .tickFormat(d3.timeFormat('%Y')),
+          );
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('y', -40)
+          .attr('x', -hospitality_height / 2)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '12px')
+          .text('Hospital Occupancy');
+
+        svg
+          .append('path')
+          .datum(data)
+          .attr(
+            'class',
+            `line ${country.toLowerCase()}-line`,
+          )
+          .attr(
+            'd',
+            d3
+              .line()
+              .x((d) => x(d.date))
+              .y((d) => y(d.value))
+              .curve(d3.curveMonotoneX),
+          );
+
+        // tooltip area
+        const tooltipArea = svg
+          .append('rect')
+          .attr('width', hospitality_width)
+          .attr('height', hospitality_height)
+          .style('opacity', 0)
+          .style('pointer-events', 'all');
+
+        const bisect = d3.bisector((d) => d.date).left;
+
+        tooltipArea.on('mousemove', function (event) {
+          const mouseX = d3.pointer(event)[0];
+
+          const x0 = x.invert(mouseX);
+
+          const i = bisect(data, x0, 1);
+
+          // Handle edge cases
+          if (i >= data.length || i <= 0) return;
+
+          // Get the data point
+          const d0 = data[i - 1];
+          const d1 = data[i];
+
+          // which point is closer
+          const d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+
+          // Show tooltip at position
+          tooltip
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+
+          tooltip
+            .html(
+              `
+            <strong>${country}</strong><br>
+            Date: ${d.formattedDate}<br>
+            Hospital Occupancy: <span class="tooltip-value">${d.value}</span>
+          `,
+            )
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 28 + 'px');
+
+          // vertical line at position
+          svg.selectAll('.tooltip-line').remove();
+          svg
+            .append('line')
+            .attr('class', 'tooltip-line')
+            .attr('x1', x(d.date))
+            .attr('x2', x(d.date))
+            .attr('y1', 0)
+            .attr('y2', hospitality_height)
+            .style('stroke', 'rgba(0,0,0,0.2)')
+            .style('stroke-width', 1)
+            .style('stroke-dasharray', '3,3');
+
+          // circle at that position
+          svg.selectAll('.tooltip-circle').remove();
+          svg
+            .append('circle')
+            .attr('class', 'tooltip-circle')
+            .attr('cx', x(d.date))
+            .attr('cy', y(d.value))
+            .attr('r', 4)
+            .style('fill', hospitality_colorScale[country])
+            .style('stroke', '#fff')
+            .style('stroke-width', 2);
+        });
+
+        tooltipArea.on('mouseout', function () {
+          tooltip
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+
+          svg.selectAll('.tooltip-line').remove();
+          svg.selectAll('.tooltip-circle').remove();
+        });
+      }
+
+      loadData();
+
+      
+
+      // combined chart
+      function createCombinedChart(allData) {
+        // fill width
+        const combinedMargin = {
+          top: 20,
+          right: 30,
+          bottom: 40,
+          left: 50,
+        };
+        const combinedWidth =
+          1100 - combinedMargin.left - combinedMargin.right;
+        const combinedHeight =
+          400 - combinedMargin.top - combinedMargin.bottom;
+
+        const svg = d3
+          .select('#combined-chart')
+          .append('svg')
+          .attr(
+            'width',
+            combinedWidth +
+              combinedMargin.left +
+              combinedMargin.right,
+          )
+          .attr(
+            'height',
+            combinedHeight +
+              combinedMargin.top +
+              combinedMargin.bottom,
+          )
+          .append('g')
+          .attr(
+            'transform',
+            `translate(${combinedMargin.left},${combinedMargin.top})`,
+          );
+
+        const allPoints = [];
+        Object.keys(allData).forEach((country) => {
+          allData[country].forEach((d) =>
+            allPoints.push({ ...d, country: country }),
+          );
+        });
+
+        // scales
+        const x = d3
+          .scaleTime()
+          .domain(d3.extent(allPoints, (d) => d.date))
+          .range([0, combinedWidth]);
+
+        const y = d3
+          .scaleLinear()
+          .domain([0, d3.max(allPoints, (d) => d.value)])
+          .nice()
+          .range([combinedHeight, 0]);
+
+        // x axis
+        svg
+          .append('g')
+          .attr('class', 'axis-x')
+          .attr(
+            'transform',
+            `translate(0,${combinedHeight})`,
+          )
+          .call(
+            d3
+              .axisBottom(x)
+              .tickValues([
+                // Keep all ticks for combined chart
+                new Date('2020-01-01'),
+                new Date('2021-01-01'),
+                new Date('2022-01-01'),
+              ])
+              .tickFormat(d3.timeFormat('%Y')),
+          );
+
+        // y axis
+        svg
+          .append('g')
+          .attr('class', 'axis-y')
+          .call(d3.axisLeft(y));
+
+        // y axis label
+        svg
+          .append('text')
+          .attr('transform', 'rotate(-90)')
+          .attr('y', -40)
+          .attr('x', -combinedHeight / 2)
+          .attr('text-anchor', 'middle')
+          .style('font-size', '12px')
+          .text('Hospital Occupancy');
+
+        const line = d3
+          .line()
+          .x((d) => x(d.date))
+          .y((d) => y(d.value))
+          .curve(d3.curveMonotoneX);
+
+        // lines for each country
+        Object.keys(allData).forEach((country) => {
+          svg
+            .append('path')
+            .datum(allData[country])
+            .attr(
+              'class',
+              `line ${country.toLowerCase()}-line`,
+            )
+            .attr('d', line);
+        });
+
+        function createLegend(containerId, countries) {
+          const legendContainer = d3.select(`#${containerId}`);
+          countries.forEach(country => {
+            const item = legendContainer.append('div')
+              .attr('class','legend-item')
+              .attr('data-country',country)
+              .on('mouseover', ()=>highlightCountry(country))
+              .on('mouseout',  ()=>resetHighlight());
+            item.append('div')
+              .attr('class','legend-color')
+              .style('background-color', colorScale(country));
+            item.append('span').text(country);
+          });
+        }
+
+        // then, after you draw each chart:
+        createLegend('gdp-legend',           ['Sweden','Norway','Denmark']);
+        createLegend('unemployment-legend',  ['Sweden','Norway','Denmark']);
+        createLegend('combined-legend',      ['Sweden','Norway','Denmark']);
+
+        // tooltip area for combined chart
+        const tooltipArea = svg
+          .append('rect')
+          .attr('width', combinedWidth)
+          .attr('height', combinedHeight)
+          .style('opacity', 0)
+          .style('pointer-events', 'all');
+
+        tooltipArea.on('mousemove', function (event) {
+          const mouseX = d3.pointer(event)[0];
+
+          const x0 = x.invert(mouseX);
+
+          let closestPoints = [];
+          Object.keys(allData).forEach((country) => {
+            const bisect = d3.bisector((d) => d.date).left;
+            const i = bisect(allData[country], x0, 1);
+
+            // edge cases
+            if (i >= allData[country].length || i <= 0)
+              return;
+
+            const d0 = allData[country][i - 1];
+            const d1 = allData[country][i];
+
+            // find which point is closer
+            const d = x0 - d0.date > d1.date - x0 ? d1 : d0;
+            closestPoints.push({ ...d, country: country });
+          });
+
+          if (closestPoints.length === 0) return;
+
+          svg.selectAll('.tooltip-line').remove();
+          svg.selectAll('.tooltip-circle').remove();
+
+          // vertical line
+          const tooltipDate = closestPoints[0].date;
+          svg
+            .append('line')
+            .attr('class', 'tooltip-line')
+            .attr('x1', x(tooltipDate))
+            .attr('x2', x(tooltipDate))
+            .attr('y1', 0)
+            .attr('y2', combinedHeight)
+            .style('stroke', 'rgba(0,0,0,0.2)')
+            .style('stroke-width', 1)
+            .style('stroke-dasharray', '3,3');
+
+          // tooltip circle
+          closestPoints.forEach((d) => {
+            svg
+              .append('circle')
+              .attr('class', 'tooltip-circle')
+              .attr('cx', x(d.date))
+              .attr('cy', y(d.value))
+              .attr('r', 4)
+              .style(
+                'fill',
+                hospitality_colorScale[d.country],
+              )
+              .style('stroke', '#fff')
+              .style('stroke-width', 2);
+          });
+
+          tooltip
+            .transition()
+            .duration(200)
+            .style('opacity', 0.9);
+
+          let tooltipHtml = `<strong>Date: ${closestPoints[0].formattedDate}</strong><br>`;
+
+          closestPoints.forEach((d) => {
+            tooltipHtml += `${d.country}: <span class="tooltip-value">${d.value}</span><br>`;
+          });
+
+          tooltip
+            .html(tooltipHtml)
+            .style('left', event.pageX + 10 + 'px')
+            .style('top', event.pageY - 28 + 'px');
+        });
+
+        tooltipArea.on('mouseout', function () {
+          tooltip
+            .transition()
+            .duration(500)
+            .style('opacity', 0);
+
+          svg.selectAll('.tooltip-line').remove();
+          svg.selectAll('.tooltip-circle').remove();
+        });
+      }
+
+
+      </script>
+
+
+
+
+
+
+
+  </body>
 </html>
