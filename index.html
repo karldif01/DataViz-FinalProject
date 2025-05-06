@@ -25,15 +25,29 @@
         max-width: 800px;
         margin: 0 auto;
         padding: 20px;
-        background-color: #f9f9f9;
+        background-color: #fafafa;
         font-style: times;
       }
+
+      .note {
+        display: table;
+        margin: 20px auto;
+        padding: 0.5em 1em;
+        background-color: #e3e3e3;
+        font-size: 0.75em;
+        line-height: 1.5;
+        font-style: times;
+        text-align: center;
+        font-style: italic;
+        max-width: none;
+      }
+
       .chart-container {
         border: 1px solid #ddd;
         border-radius: 5px;
         padding: 20px;
         background-color: #f9f9f9;
-        flex: 1; /* Added to make containers share space equally */
+        flex: 1;
       }
       #chart {
         width: 100%;
@@ -65,7 +79,7 @@
       h2 {
         margin-top: 0;
         color: #555;
-        text-align: center; /* Center indv chart titles */
+        text-align: center;
       }
       .axis-x path,
       .axis-y path {
@@ -167,6 +181,16 @@
       }
 
       /* Mortality Section */
+
+      .mortality-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+      }
+
       .mortality_legend-html {
         text-align: center;
         margin-bottom: 10px;
@@ -299,6 +323,43 @@
         width: 200px;
         margin-bottom: 5px;
       }
+
+      #treemap-wrapper {
+        position: relative;
+        width: 100%;
+      }
+
+      .cell {
+        stroke: #fff;
+        stroke-width: 1px;
+        cursor: pointer;
+      }
+      .cell-label {
+        font-size: 16px;
+        text-anchor: middle;
+        dominant-baseline: middle;
+        pointer-events: none;
+        font-weight: bold;
+      }
+      .treemap-legend {
+        margin: 20px auto;
+        width: 300px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 10px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+      }
+      .treemap-legend-item {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+      }
+      .treemap-legend-color {
+        width: 20px;
+        height: 20px;
+        margin-right: 10px;
+      }
     </style>
   </head>
   <body>
@@ -310,59 +371,60 @@
       <h4>Email: kfhujosefsson@dons.usfca.edu</h4>
     </header>
 
-    // create a paragraph element
     <p class="paragraph">
-      This project aims to analyze the COVID-19 response in
-      Sweden, focusing on the effectiveness of their
-      approach compared to other countries. The analysis
-      will include data visualization and statistical
-      analysis to draw conclusions about the success or
-      failure of Sweden's strategy. The project will utilize
-      various data sources, including COVID-19 case numbers,
-      vaccination rates, and public health policies. The
-      goal is to provide a comprehensive overview of
-      Sweden's response to the pandemic and its impact on
-      public health. The analysis will be presented through
-      interactive visualizations, allowing users to explore
-      the data and draw their own conclusions. The project
-      will also include a discussion of the implications of
-      Sweden's approach for future public health policy and
-      pandemic preparedness. The final project will be
-      presented in a web-based format, making it accessible
-      to a wide audience. The use of D3.js for data
-      visualization will enhance the presentation and allow
-      for dynamic exploration of the data. The project will
-      be structured as follows:
+      When COVID-19 emerged in early 2020, governments
+      worldwide scrambled to contain its spread through
+      lockdowns, travel bans, and strict social-distancing
+      rules. Yet in Scandinavia—home to three culturally,
+      economically, and demographically similar
+      nations—responses diverged sharply. Norway and Denmark
+      moved quickly to close schools, shutter nonessential
+      businesses, and limit gatherings, while Sweden charted
+      its own course, favoring voluntary guidelines over
+      mandatory restrictions.
     </p>
 
-    // timeline
-
     <p class="paragraph">
-      This project aims to analyze the COVID-19 response in
-      Sweden, focusing on the effectiveness of their
-      approach compared to other countries. The analysis
-      will include data visualization and statistical
-      analysis to draw conclusions about the success or
-      failure of Sweden's strategy. The project will utilize
-      various data sources, including COVID-19 case numbers,
-      vaccination rates, and public health policies. The
-      goal is to provide a comprehensive overview of
-      Sweden's response to the pandemic and its impact on
-      public health. The analysis will be presented through
-      interactive visualizations, allowing users to explore
-      the data and draw their own conclusions. The project
-      will also include a discussion of the implications of
-      Sweden's approach for future public health policy and
-      pandemic preparedness. The final project will be
-      presented in a web-based format, making it accessible
-      to a wide audience. The use of D3.js for data
-      visualization will enhance the presentation and allow
-      for dynamic exploration of the data. The project will
-      be structured as follows:
+      This project asks: was locking down an entire society
+      the best pandemic strategy? To find out, we’ll compare
+      Sweden, Norway, and Denmark across health, economic,
+      and social metrics. First, take a look at the timeline
+      below to see when each country implemented—or
+      avoided—lockdowns during the crucial 2020–2021 period.
     </p>
 
-    // heatmap
-    <h1>Covid Cases in Scandinavia</h1>
+    <img
+      src="lockdow-timeline.png"
+      alt="Timeline of lockdowns in Scandinavian countries"
+      style="
+        max-width: 100%;
+        height: auto;
+        display: block;
+        margin: 20px auto;
+      "
+    />
+    <p class="note">
+      Lockdown Timeline
+      <br />
+      Note: All lockdowns were during 2020-2021.
+    </p>
+
+    <p class="paragraph">
+      In spring 2020, COVID-19 case counts began to climb
+      across Scandinavia. Denmark and Norway saw their daily
+      infections level off soon after imposing strict
+      lockdowns, while Sweden—pursuing a herd-immunity
+      approach—experienced a much steeper, prolonged rise in
+      cases. The interactive heatmap below lets you drag the
+      slider to watch how case numbers shifted over time in
+      each country. Notice that although Sweden led in
+      infections early on, by mid-2021 Denmark had amassed
+      the highest cumulative total, suggesting that
+      lockdowns may have delayed rather than prevented the
+      spread—or that other factors came into play.
+    </p>
+
+    <h1>Total Covid Cases in Scandinavia</h1>
     <div class="chart-wrapper">
       <div id="geo-wrapper"></div>
       <div id="heatmap-slider-container">
@@ -376,32 +438,28 @@
         <span id="displayed-date"></span>
       </div>
     </div>
-
-    <p class="paragraph">
-      This project aims to analyze the COVID-19 response in
-      Sweden, focusing on the effectiveness of their
-      approach compared to other countries. The analysis
-      will include data visualization and statistical
-      analysis to draw conclusions about the success or
-      failure of Sweden's strategy. The project will utilize
-      various data sources, including COVID-19 case numbers,
-      vaccination rates, and public health policies. The
-      goal is to provide a comprehensive overview of
-      Sweden's response to the pandemic and its impact on
-      public health. The analysis will be presented through
-      interactive visualizations, allowing users to explore
-      the data and draw their own conclusions. The project
-      will also include a discussion of the implications of
-      Sweden's approach for future public health policy and
-      pandemic preparedness. The final project will be
-      presented in a web-based format, making it accessible
-      to a wide audience. The use of D3.js for data
-      visualization will enhance the presentation and allow
-      for dynamic exploration of the data. The project will
-      be structured as follows:
+    <p class="note">
+      Total Covid Cases in Scandinavia - Choropleth Map with
+      Tooltip and Date Slider in D3
+      <br />
+      Note: Use date slider to see the change in total cases
+      for different dates.
     </p>
 
-    // GDP & Unemployment
+    <p class="paragraph">
+      The pandemic’s economic fallout also varied. Our GDP
+      chart shows annual percentage changes: during lockdown
+      periods, Denmark and Norway managed shallower
+      contractions compared to Sweden’s deeper decline in
+      2020. Likewise, the unemployment chart reveals that
+      Sweden saw the sharpest spike in joblessness, whereas
+      Norway and Denmark weathered the labor-market shock
+      more smoothly. Together, these patterns imply that
+      decisive restrictions may have helped mitigate
+      economic damage more effectively than Sweden’s lighter
+      touch.
+    </p>
+
     <div class="dashboard">
       <div class="chart-container">
         <h2>GDP Annual % Change</h2>
@@ -417,32 +475,21 @@
     </div>
 
     <p class="paragraph">
-      This project aims to analyze the COVID-19 response in
-      Sweden, focusing on the effectiveness of their
-      approach compared to other countries. The analysis
-      will include data visualization and statistical
-      analysis to draw conclusions about the success or
-      failure of Sweden's strategy. The project will utilize
-      various data sources, including COVID-19 case numbers,
-      vaccination rates, and public health policies. The
-      goal is to provide a comprehensive overview of
-      Sweden's response to the pandemic and its impact on
-      public health. The analysis will be presented through
-      interactive visualizations, allowing users to explore
-      the data and draw their own conclusions. The project
-      will also include a discussion of the implications of
-      Sweden's approach for future public health policy and
-      pandemic preparedness. The final project will be
-      presented in a web-based format, making it accessible
-      to a wide audience. The use of D3.js for data
-      visualization will enhance the presentation and allow
-      for dynamic exploration of the data. The project will
-      be structured as follows:
+      A sudden influx of COVID-19 patients placed enormous
+      strain on health care systems. Sweden’s hospitals
+      reached capacity quickly during the first wave,
+      reflecting its higher early case counts. By contrast,
+      Norway and Denmark “flattened the curve” through
+      lockdowns, keeping their peak hospital occupancy per
+      10 million inhabitants lower—at least initially.
+      However, when case numbers climbed again in 2022,
+      Denmark ultimately recorded the highest peak. The
+      small multiples below show each country’s daily
+      hospital occupancy, making clear both the timing and
+      magnitude of each surge.
     </p>
 
-    // hospitality dashboard
-
-    <h1>Hospital occupancy</h1>
+    <h1>Hospital occupancy per 10M</h1>
     <div class="hospitality-dashboard">
       <div class="chart-container">
         <h2>Denmark Hospital Occupancy</h2>
@@ -457,6 +504,13 @@
         <div id="sweden-chart"></div>
       </div>
     </div>
+
+    <p class="note">
+      Hospital Occupancy in Scandinavia - Small Multiples in
+      D3
+      <br />
+      Note: Hover over the data to see statistics.
+    </p>
 
     <div style="margin-top: 30px; margin-bottom: 40px">
       <div
@@ -478,30 +532,21 @@
     </div>
 
     <p class="paragraph">
-      This project aims to analyze the COVID-19 response in
-      Sweden, focusing on the effectiveness of their
-      approach compared to other countries. The analysis
-      will include data visualization and statistical
-      analysis to draw conclusions about the success or
-      failure of Sweden's strategy. The project will utilize
-      various data sources, including COVID-19 case numbers,
-      vaccination rates, and public health policies. The
-      goal is to provide a comprehensive overview of
-      Sweden's response to the pandemic and its impact on
-      public health. The analysis will be presented through
-      interactive visualizations, allowing users to explore
-      the data and draw their own conclusions. The project
-      will also include a discussion of the implications of
-      Sweden's approach for future public health policy and
-      pandemic preparedness. The final project will be
-      presented in a web-based format, making it accessible
-      to a wide audience. The use of D3.js for data
-      visualization will enhance the presentation and allow
-      for dynamic exploration of the data. The project will
-      be structured as follows:
+      Mortality offers the most sobering metric of all. Our
+      deaths-per-10-million chart illustrates that Sweden
+      suffered an early and sharp rise in fatalities while
+      its neighbors were under restrictions. Although Norway
+      and Denmark later saw similar upward trends, Sweden’s
+      death rate remained consistently higher throughout the
+      pandemic. This persistent gap highlights the human
+      cost of forgoing strict containment measures.
     </p>
 
-    // mortality chart
+    <h1>Total COVID Deaths per 10M in Scandinavia</h1>
+    <div class="chart-wrapper">
+      <div id="legend-container"></div>
+      <div id="treemap-wrapper"></div>
+    </div>
     <h1>Scandinavia COVID-19 Deaths Per 10 Million</h1>
     <div class="mortality_legend-html" id="legend">
       <div class="mortality_legend_item">
@@ -529,7 +574,7 @@
 
     <!-- Added chart container div -->
     <div
-      class="chart-container"
+      class="mortality-container"
       style="margin-bottom: 40px"
     >
       <div id="chart"></div>
@@ -549,27 +594,17 @@
     <div id="tooltip" class="mortality-tooltip"></div>
 
     <p class="paragraph">
-      This project aims to analyze the COVID-19 response in
-      Sweden, focusing on the effectiveness of their
-      approach compared to other countries. The analysis
-      will include data visualization and statistical
-      analysis to draw conclusions about the success or
-      failure of Sweden's strategy. The project will utilize
-      various data sources, including COVID-19 case numbers,
-      vaccination rates, and public health policies. The
-      goal is to provide a comprehensive overview of
-      Sweden's response to the pandemic and its impact on
-      public health. The analysis will be presented through
-      interactive visualizations, allowing users to explore
-      the data and draw their own conclusions. The project
-      will also include a discussion of the implications of
-      Sweden's approach for future public health policy and
-      pandemic preparedness. The final project will be
-      presented in a web-based format, making it accessible
-      to a wide audience. The use of D3.js for data
-      visualization will enhance the presentation and allow
-      for dynamic exploration of the data. The project will
-      be structured as follows:
+      In conclusion, Sweden’s choice to avoid mandatory
+      lockdowns did not spare it from high case volumes—and
+      coincided with steeper economic contractions, sharper
+      unemployment spikes, greater initial hospital strain,
+      and consistently elevated mortality compared to its
+      neighbors. Early, stringent lockdowns in Norway and
+      Denmark appear to have blunted both the public-health
+      impact and the economic shock. While vaccines and
+      treatments reshaped the pandemic landscape later on,
+      those first decisions set the trajectory for lives and
+      livelihoods across Scandinavia.
     </p>
 
     <script>
@@ -1281,7 +1316,7 @@
       // data
       function loadData() {
         d3.csv(
-          'https://gist.githubusercontent.com/karldif01/b47551c67889816e4caa36500377e080/raw/9c9dc3dc1223cf788e663dc5186c8ff279594f6b/gistfile1.txt',
+          'https://gist.githubusercontent.com/karldif01/54b1ed3367edd6c29be8df7acbf22838/raw/71db7ac7c6a0135d6e9860f3983e14ffb712e685/gistfile1.txt',
         ).then((csvData) => {
           // Group by country
           const dataByCountry = {
@@ -1378,9 +1413,9 @@
             d3
               .axisBottom(x)
               .tickValues([
-                // Removed 2020 tick
-                new Date('2021-01-01'),
-                new Date('2022-01-01'),
+                new Date('2020-03-13'),
+                new Date('2021-01-02'),
+                new Date('2022-01-02'),
               ])
               .tickFormat(d3.timeFormat('%Y')),
           );
@@ -1434,17 +1469,13 @@
 
           const i = bisect(data, x0, 1);
 
-          // Handle edge cases
           if (i >= data.length || i <= 0) return;
 
-          // Get the data point
           const d0 = data[i - 1];
           const d1 = data[i];
 
-          // which point is closer
           const d = x0 - d0.date > d1.date - x0 ? d1 : d0;
 
-          // Show tooltip at position
           tooltip
             .transition()
             .duration(200)
@@ -1455,7 +1486,7 @@
               `
             <strong>${country}</strong><br>
             Date: ${d.formattedDate}<br>
-            Hospital Occupancy: <span class="tooltip-value">${d.value}</span>
+            Hospital Occupancy Per 10M: <span class="tooltip-value">${Math.round(d.value)}</span>
           `,
             )
             .style('left', event.pageX + 10 + 'px')
@@ -1568,8 +1599,8 @@
               .tickValues([
                 // Keep all ticks for combined chart
                 new Date('2020-03-13'),
-                new Date('2021-01-01'),
-                new Date('2022-01-01'),
+                new Date('2021-01-02'),
+                new Date('2022-01-02'),
               ])
               .tickFormat(d3.timeFormat('%Y')),
           );
@@ -1721,7 +1752,7 @@
           let tooltipHtml = `<strong>Date: ${closestPoints[0].formattedDate}</strong><br>`;
 
           closestPoints.forEach((d) => {
-            tooltipHtml += `${d.country}: <span class="tooltip-value">${d.value}</span><br>`;
+            tooltipHtml += `${d.country}: <span class="tooltip-value">${Math.round(d.value)}</span><br>`;
           });
 
           tooltip
@@ -1741,22 +1772,194 @@
         });
       }
 
+      // Mortality Treemap
+      const treemap_width = 800,
+        treemap_height = 500;
+
+      const treemap_svg = d3
+        .select('#treemap-wrapper')
+        .append('svg')
+        .attr(
+          'viewBox',
+          `0 0 ${treemap_width} ${treemap_height}`,
+        )
+        .attr('preserveAspectRatio', 'xMidYMid meet');
+
+      // const infoTooltip = d3
+      //   .select('body')
+      //   .append('div')
+      //   .attr('class', 'info-tooltip');
+
+      d3.csv(
+        'https://gist.githubusercontent.com/karldif01/e0beb4b117aa3dc68c55510e05f41a64/raw/89705d1aca641526463cae1ddc4aca49987b5a86/gistfile1.txt',
+        (entry) => ({
+          country: entry.Country,
+          date: new Date(entry.date),
+          deathsPer10M: +entry.deaths_per_10m,
+        }),
+      ).then((deathRecords) => {
+        const targetCountries = [
+          'Sweden',
+          'Denmark',
+          'Norway',
+        ];
+        const filteredRecords = deathRecords.filter((d) =>
+          targetCountries.includes(d.country),
+        );
+
+        const treemap_countryGroups = d3.group(
+          filteredRecords,
+          (d) => d.country,
+        );
+
+        const treemap_countryData = [];
+        treemap_countryGroups.forEach(
+          (records, country) => {
+            records.sort((a, b) => b.date - a.date);
+            const latestRecord = records[0];
+
+            treemap_countryData.push({
+              name: country,
+              value: Math.max(
+                latestRecord.deathsPer10M,
+                0.1,
+              ),
+              deathRate: latestRecord.deathsPer10M,
+            });
+          },
+        );
+
+        const treemap_countryColors = {
+          Sweden: '#9acd32',
+          Norway: '#0065a4',
+          Denmark: '#8b0000',
+        };
+
+        treemap_createLegend(treemap_countryColors);
+
+        const treemapData = {
+          name: 'countries',
+          children: treemap_countryData,
+        };
+
+        const treemap = d3
+          .treemap()
+          .size([treemap_width, treemap_height])
+          .padding(5)
+          .round(true);
+
+        const root = d3
+          .hierarchy(treemapData)
+          .sum((d) => d.value);
+
+        treemap(root);
+
+        // Create treemap cells
+        const cell = treemap_svg
+          .selectAll('g')
+          .data(root.leaves())
+          .join('g')
+          .attr(
+            'transform',
+            (d) => `translate(${d.x0},${d.y0})`,
+          );
+
+        cell
+          .append('rect')
+          .attr('class', 'cell')
+          .attr('width', (d) => d.x1 - d.x0)
+          .attr('height', (d) => d.y1 - d.y0)
+          .attr(
+            'fill',
+            (d) => treemap_countryColors[d.data.name],
+          )
+          .on('mouseover', function (event, d) {
+            infoTooltip
+              .style('display', 'block')
+              .style('left', event.pageX + 10 + 'px')
+              .style('top', event.pageY - 28 + 'px')
+                .html(`<strong>${d.data.name}</strong><br/>
+                  Deaths per 10M: ${Math.round(d.data.deathRate).toLocaleString()}`);
+          })
+
+
+          .on('mousemove', function (event) {
+            infoTooltip
+              .style('left', event.pageX + 10 + 'px')
+              .style('top', event.pageY - 28 + 'px');
+          })
+          .on('mouseout', function () {
+            infoTooltip.style('display', 'none');
+          });
+
+        cell
+          .append('text')
+          .attr('class', 'cell-label')
+          .attr('x', (d) => (d.x1 - d.x0) / 2)
+          .attr('y', (d) => (d.y1 - d.y0) / 2 - 15)
+          .text((d) => d.data.name)
+          .attr('fill', '#333');
+
+        cell
+          .append('text')
+          .attr('class', 'cell-value')
+          .attr('x', (d) => (d.x1 - d.x0) / 2)
+          .attr('y', (d) => (d.y1 - d.y0) / 2 + 15)
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '14px')
+          .text((d) =>
+            d.data.deathRate.toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            }),
+          )
+          .attr('fill', '#333');
+      });
+
+      function treemap_createLegend(colorMap) {
+        const treemap_legendContainer = d3
+          .select('#legend-container')
+          .append('div')
+          .attr('class', 'treemap-legend');
+
+        treemap_legendContainer
+          .append('div')
+          .style('text-align', 'center')
+          .style('font-weight', 'bold')
+          .style('margin-bottom', '10px')
+          .text('Deaths per 10M population by Country');
+
+        const treemap_legendItems = treemap_legendContainer
+          .selectAll('.treemap-legend-item')
+          .data(Object.entries(colorMap))
+          .enter()
+          .append('div')
+          .attr('class', 'treemap-legend-item');
+
+        treemap_legendItems
+          .append('div')
+          .attr('class', 'treemap-legend-color')
+          .style('background-color', (d) => d[1]);
+
+        treemap_legendItems.append('div').text((d) => d[0]);
+      }
+
       // Mortality Section
 
       const mortality_margin = {
-          top: 20,
-          right: 30,
-          bottom: 40,
-          left: 60,
-        },
-        mortality_width =
-          800 -
-          mortality_margin.left -
-          mortality_margin.right,
-        mortality_height =
+        top: 20,
+        right: 30,
+        bottom: 40,
+        left: 80,
+      };
+
+      (mortality_width =
+        800 -
+        mortality_margin.left -
+        mortality_margin.right),
+        (mortality_height =
           550 -
           mortality_margin.top -
-          mortality_margin.bottom;
+          mortality_margin.bottom);
 
       const parseDate = d3.timeParse('%Y-%m-%d'),
         formatDate = d3.timeFormat('%Y-%m-%d');
