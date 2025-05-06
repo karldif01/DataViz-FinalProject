@@ -379,10 +379,10 @@
       When COVID-19 emerged in early 2020, governments
       worldwide scrambled to contain its spread through
       lockdowns, travel bans, and strict social-distancing
-      rules. Yet in Scandinavia—home to three culturally,
-      economically, and demographically similar
-      nations—responses diverged sharply. Norway and Denmark
-      moved quickly to close schools, shutter nonessential
+      rules. Yet in Scandinavia, home to three culturally,
+      economically, and demographically similar nations,
+      pandemic responses diverged. Norway and Denmark moved
+      quickly to close schools, shutter nonessential
       businesses, and limit gatherings, while Sweden charted
       its own course, favoring voluntary guidelines over
       mandatory restrictions.
@@ -390,11 +390,12 @@
 
     <p class="paragraph">
       This project asks: was locking down an entire society
-      the best pandemic strategy? To find out, we’ll compare
-      Sweden, Norway, and Denmark across health, economic,
-      and social metrics. First, take a look at the timeline
-      below to see when each country implemented—or
-      avoided—lockdowns during the crucial 2020–2021 period.
+      the better pandemic strategy? To find out, we’ll
+      compare Sweden with Norway and Denmark across health,
+      economic, and social metrics. First, take a look at
+      the timeline below to see when each country
+      implemented, lockdowns over the course of the
+      pandemic.
     </p>
 
     <img
@@ -417,15 +418,15 @@
       In spring 2020, COVID-19 case counts began to climb
       across Scandinavia. Denmark and Norway saw their daily
       infections level off soon after imposing strict
-      lockdowns, while Sweden—pursuing a herd-immunity
-      approach—experienced a much steeper, prolonged rise in
-      cases. The interactive heatmap below lets you drag the
-      slider to watch how case numbers shifted over time in
-      each country. Notice that although Sweden led in
-      infections early on, by mid-2021 Denmark had amassed
+      lockdowns, while Sweden,pursuing a herd-immunity
+      approach, experienced a much steeper, prolonged rise
+      in cases. The interactive heatmap below lets you drag
+      the slider to watch how case numbers shifted over time
+      in each country. Notice that although Sweden led in
+      infections early on, by early 2022 Denmark had amassed
       the highest cumulative total, suggesting that
       lockdowns may have delayed rather than prevented the
-      spread—or that other factors came into play.
+      spread, or that other factors came into play.
     </p>
 
     <h1>Total Covid Cases in Scandinavia</h1>
@@ -451,17 +452,17 @@
     </p>
 
     <p class="paragraph">
-      The pandemic’s economic fallout also varied. Our GDP
-      chart shows annual percentage changes: during lockdown
-      periods, Denmark and Norway managed shallower
-      contractions compared to Sweden’s deeper decline in
-      2020. Likewise, the unemployment chart reveals that
-      Sweden saw the sharpest spike in joblessness, whereas
-      Norway and Denmark weathered the labor-market shock
-      more smoothly. Together, these patterns imply that
-      decisive restrictions may have helped mitigate
-      economic damage more effectively than Sweden’s lighter
-      touch.
+      The pandemic’s economic consequences also varied. This
+      GDP chart below shows annual percentage changes:
+      during lockdown periods, Denmark and Norway managed
+      shallower contractions compared to Sweden’s deeper
+      decline in 2020. Likewise, the unemployment chart
+      reveals that Sweden saw the sharpest spike in
+      unemployment, whereas Norway and Denmark weathered the
+      labor-market shock more smoothly. Together, these
+      patterns imply that decisive restrictions may have
+      helped mitigate economic damage more effectively than
+      Sweden’s lighter touch.
     </p>
 
     <div class="dashboard">
@@ -479,18 +480,18 @@
     </div>
 
     <p class="paragraph">
-      A sudden influx of COVID-19 patients placed enormous
-      strain on health care systems. Sweden’s hospitals
-      reached capacity quickly during the first wave,
-      reflecting its higher early case counts. By contrast,
-      Norway and Denmark “flattened the curve” through
-      lockdowns, keeping their peak hospital occupancy per
-      10 million inhabitants lower—at least initially.
-      However, when case numbers climbed again in 2022,
-      Denmark ultimately recorded the highest peak. The
-      small multiples below show each country’s daily
-      hospital occupancy, making clear both the timing and
-      magnitude of each surge.
+      A sudden influx of COVID-19 patients early on placed
+      enormous strain on health care systems. Sweden’s
+      hospitals reached capacity quickly during the first
+      wave spring of 2020, reflecting its higher early case
+      counts. By contrast, Norway and Denmark kept the
+      occupancy low and stable through lockdowns, keeping
+      their peak hospital occupancy per 10 million
+      inhabitants lower, at least initially. However, when
+      case numbers climbed again in 2022, Denmark ultimately
+      recorded the highest peak. The small multiples below
+      show each country’s daily hospital occupancy, making
+      clear both the timing and magnitude of each surge.
     </p>
 
     <h1>Hospital occupancy per 10M</h1>
@@ -551,7 +552,9 @@
       <div id="legend-container"></div>
       <div id="treemap-wrapper"></div>
     </div>
-    <h1>Animated Scatterplot COVID-19 Deaths Per 10 Million</h1>
+    <h1>
+      Animated Scatterplot COVID-19 Deaths Per 10 Million
+    </h1>
     <div class="mortality_legend-html" id="legend">
       <div class="mortality_legend_item">
         <div
@@ -599,7 +602,7 @@
 
     <p class="paragraph">
       In conclusion, Sweden’s choice to avoid mandatory
-      lockdowns did not spare it from high case volumes—and
+      lockdowns did not spare it from high case volumes, and
       coincided with steeper economic contractions, sharper
       unemployment spikes, greater initial hospital strain,
       and consistently elevated mortality compared to its
@@ -607,8 +610,9 @@
       Denmark appear to have blunted both the public-health
       impact and the economic shock. While vaccines and
       treatments reshaped the pandemic landscape later on,
-      those first decisions set the trajectory for lives and
-      livelihoods across Scandinavia.
+      those first decisions and restrictions set the
+      trajectory for lives and livelihoods across
+      Scandinavia.
     </p>
 
     <script>
@@ -674,9 +678,8 @@
           .projection(geoProjection);
 
         const maxCaseCount = 3500000;
-        const colorInterpolator = d3
-          .scaleSequential(d3.interpolateOrRd)
-          .domain([0, maxCaseCount]);
+        const colorInterpolator = d3.scaleSequential(d3.interpolatePlasma)
+                .domain([0, maxCaseCount]);
 
         const countryPaths = mapSvg
           .append('g')
@@ -1882,10 +1885,9 @@
               .style('display', 'block')
               .style('left', event.pageX + 10 + 'px')
               .style('top', event.pageY - 28 + 'px')
-                .html(`<strong>${d.data.name}</strong><br/>
+              .html(`<strong>${d.data.name}</strong><br/>
                   Deaths per 10M: ${Math.round(d.data.deathRate).toLocaleString()}`);
           })
-
 
           .on('mousemove', function (event) {
             infoTooltip
